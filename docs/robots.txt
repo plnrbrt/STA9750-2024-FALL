@@ -1,1 +1,1 @@
-Sitemap: https://<plnrbrt>.github.io/STA9750-2024-FALL/sitemap.xml
+Sitemap: https://plnrbrt.github.io/STA9750-2024-FALL/sitemap.xml
