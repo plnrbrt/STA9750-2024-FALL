@@ -1,13 +1,13 @@
 {
-    "id": "3EAF9D9E",
+    "id": "CDEDD3C1",
     "path": "/Users/paulinerobert/STA9750-2024-FALL/index.qmd",
     "project_path": "index.qmd",
     "type": "quarto_markdown",
-    "hash": "3901280079",
+    "hash": "4038661303",
     "contents": "",
     "dirty": false,
-    "created": 1726098035496.0,
-    "source_on_save": true,
+    "created": 1726099076059.0,
+    "source_on_save": false,
     "relative_order": 2,
     "properties": {
         "tempName": "Untitled1",
@@ -17,11 +17,11 @@
         "scrollLine": "0"
     },
     "folds": "",
-    "lastKnownWriteTime": 1726098232,
+    "lastKnownWriteTime": 1726099108,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1726098232320,
+    "last_content_update": 1726099108435,
     "read_only": false,
     "read_only_alternatives": []
 }
