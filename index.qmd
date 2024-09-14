@@ -5,7 +5,7 @@ title: "Pauline Robert's website"
 
 Hello, I'm **Pauline Robert**, a passionate **Business Analytics Professional** with a focus on **Data Science** and **Marketing Strategy**. Currently, I'm pursuing a **Master's in Business Analytics** at the **Zicklin School of Business, Baruch College**, with a concentration in Data Science.
 
-I bring experience from **Roche Bobois**, **OCUS**, and **Showroom Lab**, where I've worked in marketing coordination, client engagement, sales optimization, and campaign management. My academic background includes a **BS in Business Administration from NC State University** and a **BS in International Business Management from NEOMA Business School**.
+I bring experience from **Criteo**, **Roche Bobois**, **OCUS**, and **Showroom Lab**, where I've worked in marketing coordination, client engagement, sales optimization, and campaign management. My academic background includes a **BS in Business Administration from NC State University** and a **BS in International Business Management from NEOMA Business School**.
 
 ---
 
