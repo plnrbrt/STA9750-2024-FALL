@@ -1,0 +1,26 @@
+/* Dark blue to light blue gradient background */
+body {
+    background: linear-gradient(120deg, #001f3f, #007bff); /* Dark blue to light blue gradient */
+    color: #ffffff; /* Default text color */
+}
+
+/* Ensure text is visible against the gradient */
+h1, h2, h3, h4, h5, h6, p, a {
+    color: #ffffff; /* White text for better visibility */
+}
+
+/* Adjust navbar background */
+.navbar {
+    background-color: #001f3f; /* Dark blue for navbar */
+}
+
+/* Add shadow for better text readability on different backgrounds */
+body, h1, h2, h3, h4, h5, h6, p, a {
+    text-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4); /* Light shadow for text */
+}
+
+/* Links hover effect */
+a:hover {
+    color: #ffcc00; /* Highlight links when hovered */
+}
+
