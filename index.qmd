@@ -17,7 +17,13 @@ I specialize in:
 - **Marketing Campaigns**: Planning and executing multi-channel marketing campaigns, with a strong focus on client acquisition and retention.
 - **Business Insights**: Using tools like **Python**, **SQL**, **Tableau**, and **Pandas** to uncover trends and drive actionable insights.
 - **Client Engagement**: Enhancing customer experiences by analyzing data and improving KPIs.
+---
 
+### Skills
+- Python, SQL, Pandas, Tableau
+- Business Analytics, Data Science
+- Campaign Management, Client Engagement
+- Fluent in French, Spanish, and English
 ---
 
 ## Let's Work Together
@@ -28,17 +34,6 @@ Reach out via [LinkedIn](https://www.linkedin.com/in/-pauline-robert-/) or drop 
 
 ---
 
-### Skills
-- Python, SQL, Pandas, Tableau
-- Business Analytics, Data Science
-- Campaign Management, Client Engagement
-- Fluent in French, Spanish, and English
 
----
 
-### Contact
-
-📍 New York, NY  
-📧 **Email**: pauline.robert3@orange.fr  
-💼 **LinkedIn**: [Pauline Robert](https://www.linkedin.com/in/-pauline-robert-/)
 

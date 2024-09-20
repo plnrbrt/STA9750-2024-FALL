@@ -10,8 +10,16 @@ website:
   navbar:
     background: primary
     search: false
-    
+    right:
+      - text: "Home"
+        href: index.qmd
+      - text: "Projects"
+        href: projects.qmd
+      - text: "Contact"
+        href: contact.qmd  # New contact tab
+
 format:
   html:
     theme: quartz
     toc: false
+    css: styles.css
