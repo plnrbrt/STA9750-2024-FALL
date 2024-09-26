@@ -1,5 +1,8 @@
 ---
 title: "Pauline Robert's website"
+format:
+  html:
+    css: styles.css
 ---
 # Welcome to My Website
 
