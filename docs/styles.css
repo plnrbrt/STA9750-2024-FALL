@@ -1,26 +1,87 @@
-/* Dark blue to light blue gradient background */
+/* Global styles */
 body {
-    background: linear-gradient(120deg, #001f3f, #007bff); /* Dark blue to light blue gradient */
-    color: #ffffff; /* Default text color */
+    background-color: #f5f5dc; /* Beige background */
+    color: #000000; /* Black text */
+    font-family: Arial, sans-serif; /* Font style */
 }
 
-/* Ensure text is visible against the gradient */
-h1, h2, h3, h4, h5, h6, p, a {
-    color: #ffffff; /* White text for better visibility */
+/* Navbar styles */
+nav {
+    background-color: #8B4513; /* Brown navbar background */
+    color: #f5f5dc; /* Beige text for navbar */
+    padding: 15px; /* Padding for navbar */
 }
 
-/* Adjust navbar background */
-.navbar {
-    background-color: #001f3f; /* Dark blue for navbar */
+/* Navbar links */
+nav a {
+    color: #f5f5dc; /* Beige links in navbar */
+    text-decoration: none; /* Remove underline */
+    padding: 10px 15px; /* Padding for navbar links */
 }
 
-/* Add shadow for better text readability on different backgrounds */
-body, h1, h2, h3, h4, h5, h6, p, a {
-    text-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4); /* Light shadow for text */
+nav a:hover {
+    color: #d1b59c; /* Light beige on hover */
 }
 
-/* Links hover effect */
+/* Header styles */
+header {
+    background-color: #f5f5dc; /* Brown header */
+    color: #8B4513; /* Beige text for header */
+    padding: 20px; /* Padding around header */
+    text-align: center; /* Centered text */
+}
+
+/* Heading styles */
+h1, h2, h3, h4, h5, h6 {
+    color: #8B4513; /* Brown headings */
+}
+
+/* Link styles */
+a {
+    color: #8B4513; /* Brown links */
+}
+
 a:hover {
-    color: #ffcc00; /* Highlight links when hovered */
+    color: #d1b59c; /* Light beige on hover */
 }
 
+/* Code block styles */
+pre {
+    background-color: #FFFFFF; /* White background for code blocks */
+    color: #000000; /* Black text for code */
+    padding: 10px; /* Padding for code block */
+    border-radius: 5px; /* Rounded corners */
+}
+
+/* Table styles */
+table {
+    width: 100%; /* Full width tables */
+    border-collapse: collapse; /* Merge borders */
+}
+
+th, td {
+    border: 1px solid #8B4513; /* Brown borders */
+    padding: 8px; /* Padding for table cells */
+    text-align: left; /* Left aligned text */
+}
+
+th {
+    background-color: #f5f5dc; /* Beige background for header cells */
+    color: #8B4513; /* Brown text for header cells */
+}
+
+/* Footer styles */
+footer {
+    background-color: #8B4513; /* Brown footer background */
+    color: #f5f5dc; /* Beige text for footer */
+    padding: 15px; /* Padding for footer */
+    text-align: center; /* Centered text */
+}
+nav {
+    background-color: #8B4513 !important; /* Brown navbar background */
+    color::#f5f5dc !important; /* Beige text for navbar */
+}
+
+nav a {
+    color:#f5f5dc !important; /* Beige links in navbar */
+}
