@@ -1,87 +1,61 @@
-/* Global styles */
+/* General Background Color */
 body {
-    background-color: #f5f5dc; /* Beige background */
-    color: #000000; /* Black text */
-    font-family: Arial, sans-serif; /* Font style */
+    background-color: #e0f7fa; /* Light blue */
+    color: #004d40; /* Dark teal for general text */
+    font-family: Arial, sans-serif;
 }
 
-/* Navbar styles */
-nav {
-    background-color: #8B4513; /* Brown navbar background */
-    color: #f5f5dc; /* Beige text for navbar */
-    padding: 15px; /* Padding for navbar */
-}
-
-/* Navbar links */
-nav a {
-    color: #f5f5dc; /* Beige links in navbar */
-    text-decoration: none; /* Remove underline */
-    padding: 10px 15px; /* Padding for navbar links */
-}
-
-nav a:hover {
-    color: #d1b59c; /* Light beige on hover */
-}
-
-/* Header styles */
-header {
-    background-color: #f5f5dc; /* Brown header */
-    color: #8B4513; /* Beige text for header */
-    padding: 20px; /* Padding around header */
-    text-align: center; /* Centered text */
-}
-
-/* Heading styles */
+/* Header Styling */
 h1, h2, h3, h4, h5, h6 {
-    color: #8B4513; /* Brown headings */
+    color: #00838f; /* Turquoise headers */
+    font-weight: bold;
+    text-align: left; /* Align headers to the left */
+    padding-left: 10px; /* Optional: Add some padding for spacing */
 }
 
-/* Link styles */
+/* Links */
 a {
-    color: #8B4513; /* Brown links */
+    color: #00796b; /* Dark turquoise links */
+    text-decoration: none;
 }
 
 a:hover {
-    color: #d1b59c; /* Light beige on hover */
+    color: #004d40; /* Darker teal on hover */
+    text-decoration: underline;
 }
 
-/* Code block styles */
-pre {
-    background-color: #FFFFFF; /* White background for code blocks */
-    color: #000000; /* Black text for code */
-    padding: 10px; /* Padding for code block */
-    border-radius: 5px; /* Rounded corners */
+/* Button Styling */
+button {
+    background-color: #00838f; /* Turquoise background */
+    color: white; /* White text */
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-/* Table styles */
-table {
-    width: 100%; /* Full width tables */
-    border-collapse: collapse; /* Merge borders */
+button:hover {
+    background-color: #004d40; /* Darker teal on hover */
 }
 
-th, td {
-    border: 1px solid #8B4513; /* Brown borders */
-    padding: 8px; /* Padding for table cells */
-    text-align: left; /* Left aligned text */
-}
-
-th {
-    background-color: #f5f5dc; /* Beige background for header cells */
-    color: #8B4513; /* Brown text for header cells */
-}
-
-/* Footer styles */
-footer {
-    background-color: #8B4513; /* Brown footer background */
-    color: #f5f5dc; /* Beige text for footer */
-    padding: 15px; /* Padding for footer */
-    text-align: center; /* Centered text */
-}
+/* Navigation Bar */
 nav {
-    background-color: #8B4513 !important; /* Brown navbar background */
-    color::#f5f5dc !important; /* Beige text for navbar */
+    background-color: #00838f !important; /* Turquoise navbar */
+    padding: 15px;
 }
 
 nav a {
-    color:#f5f5dc !important; /* Beige links in navbar */
+    color: white !important; /* White text in navbar links */
+    margin-right: 15px;
+    font-weight: bold;
+    text-decoration: none;
 }
+
+nav a:hover {
+    color: #e0f7fa !important; /* Light blue on hover for contrast */
+}
+
+/* Footer Styling */
+footer {
+    background-color: #00838f; /* Turquoise */

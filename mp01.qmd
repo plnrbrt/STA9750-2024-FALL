@@ -7,7 +7,7 @@ format:
 
 # Introduction
 
-This mini project walks you through how to prepare, clean, and analyze data. The project will be followed by a report on the subject analywed.
+This mini project walks you through how to prepare, clean, and analyze data. The project will be followed by a report on the subject analyzed.
 
 We are going to analyze the fiscal characteristics of major US public transit systems using data from the National Transit Database. The goal is to understand farebox recovery rates, analyze ridership, and examine the financial efficiency of various transit systems.
 
@@ -257,23 +257,31 @@ Here our results show us that the NYC Subway ridership went from 240,655,437 in 
 ### Task 4: Explore and Analyze
 
 ### Task 5: Table Summarization
+Create a new table from USAGE that has annual total (sum) UPT and VRM for 2022. This will require use of the group_by, summarize, and filter functions. You will also want to use the year function, to extract a year from the month column.
 
+The resulting table should have the following columns:
+
+NTD ID
+Agency
+metro_area
+Mode
+UPT
+VRM
+Make sure to ungroup your table after creating it.
+
+We will name this table USAGE_2022_ANNUAL.
 ```{r}
-# Create the USAGE_2022_ANNUAL table
 USAGE_2022_ANNUAL <- USAGE |>
-  # Extract the year from the month column
-  mutate(year = year(month)) |>
-  # Filter for the year 2022
-  filter(year == 2022) |>
-  # Group by the necessary columns
-  group_by(`NTD ID`, Agency, metro_area, Mode) |>
-  # Summarize total UPT and VRM for the year
-  summarize(UPT = sum(UPT, na.rm = TRUE), VRM = sum(VRM, na.rm = TRUE)) |>
-  # Ungroup the table
+  filter(year(month) == 2022) |>
+  group_by(`NTD ID`, Agency, `metro_area`, Mode) |>
+  summarize(
+    UPT = sum(UPT, na.rm = TRUE),
+    VRM = sum(VRM, na.rm = TRUE)
+  ) %>%
   ungroup()
-colnames(USAGE_2022_ANNUAL)
+USAGE_2022_ANNUAL
 ```
-
+Once we have created this new table, we can merge it to the FINANCIALS data but first we need to make sure they have the same "mode" refrence names with the following code:
 ```{r}
 FINANCIALS <- FINANCIALS |>
   mutate(Mode = case_when(
@@ -298,7 +306,7 @@ FINANCIALS <- FINANCIALS |>
     TRUE ~ "Unknown"                    # Any other mode
   ))
 ```
-
+Once we have made sure that USAGE_2022_ANNUAL and FINANCIALS have the same value for "mode", we can merge USAGE_2022_ANNUAL to the FINANCIALS data as follows:
 ```{r}
 USAGE_AND_FINANCIALS <- left_join(USAGE_2022_ANNUAL, 
            FINANCIALS, 
@@ -308,12 +316,99 @@ USAGE_AND_FINANCIALS |>
   DT::datatable()
 ```
 ### Task 6: Farebox Recovery Among Major Systems
-Using the USAGE_AND_FINANCIALS table, answer the following questions:
+Using the USAGE_AND_FINANCIALS table,  we are going to try to answer the following questions:
 
-Which transit system (agency and mode) had the most UPT in 2022?
-Which transit system (agency and mode) had the highest farebox recovery, defined as the highest ratio of Total Fares to Expenses?
-Which transit system (agency and mode) has the lowest expenses per UPT?
-Which transit system (agency and mode) has the highest total fares per UPT?
-Which transit system (agency and mode) has the lowest expenses per VRM?
-Which transit system (agency and mode) has the highest total fares per VRM?
-You may wish to restrict your answer to major transit systems, which you can define as those with 400,000 UPT per annum.
+- Which transit system (agency and mode) had the most UPT in 2022?
+- Which transit system (agency and mode) had the highest farebox recovery, defined as the highest ratio of - Total Fares to Expenses?
+- Which transit system (agency and mode) has the lowest expenses per UPT?
+- Which transit system (agency and mode) has the highest total fares per UPT?
+- Which transit system (agency and mode) has the lowest expenses per VRM?
+- Which transit system (agency and mode) has the highest total fares per VRM?
+
+We will restrict our answers to major transit systems by defining them as those with 400,000 UPT per annum.
+
+To answer these questions, we'll need to perform the following steps using the USAGE_AND_FINANCIALS table:
+
+1. Which transit system (agency and mode) had the most UPT in 2022?
+
+```{r}
+# Find the transit system with the most UPT in 2022
+library(dplyr)
+library(knitr)
+max_upt <- USAGE_AND_FINANCIALS %>%
+  filter(UPT >= 400000) %>%
+  arrange(desc(UPT)) %>%
+  slice(1) %>%
+  select(Agency, Mode, UPT)
+kable(max_upt, caption = "Transit System with Most UPT in 2022")
+```
+The answer shows us that the MTA New York City Transit is the transit system that had the most UTP with more than 1.79 billion of trips.
+
+2. Which transit system (agency and mode) had the highest farebox recovery (Total Fares to Expenses ratio)?
+```{r}
+USAGE_AND_FINANCIALS |>
+  group_by(Agency, Mode) |>
+  summarize(
+    total_fares = sum(`Total Fares`, na.rm = TRUE),
+    total_expenses = sum(Expenses, na.rm = TRUE)
+  ) |>
+  mutate(farebox_recovery_ratio = total_fares / total_expenses) |>
+  ungroup() |>
+  arrange(desc(farebox_recovery_ratio)) |>
+  slice_head(n = 1)
+```
+The Transit System with the highest recovery ratio is the Transit Authority of Central Kentuchy, with the Vanpool mode and a recovery ratio of $2.38 USD.
+
+3.Which transit system (agency and mode) has the lowest expenses per UPT?
+```{r}
+USAGE_AND_FINANCIALS|>
+  group_by(Agency, Mode) |>
+  summarize(
+    total_expenses = sum(Expenses, na.rm = TRUE),
+    total_UPT = sum(UPT, na.rm = TRUE)) |>
+  filter(total_UPT >= 400000) |>
+    mutate (expenses_per_UPT = total_expenses/total_UPT)|>
+  ungroup() |>
+  arrange(expenses_per_UPT) |>
+  slice_head(n = 1)
+```
+North Carolina State University is the agency with the lowest expenses per UPT with the Bus mode. The expenses per UPT is $1.18 USD.
+
+4.Which transit system (agency and mode) has the highest total fares per UPT?
+```{r}
+USAGE_AND_FINANCIALS|>
+  group_by(Agency, Mode) |>
+  summarize(
+    total_fares1 = sum(`Total Fares`, na.rm = TRUE),
+    total_UPT = sum(UPT, na.rm = TRUE)) |>
+  
+  mutate (total_fares_per_UPT = total_fares1/total_UPT)|>
+  ungroup() |>
+  arrange(desc(total_fares_per_UPT)) |>
+  slice_head(n = 1)
+```
+The Altoona Metro Transit with the Demand Response mode had the highest total fares per UPT. With just 26 trips, it collected a total in fares of $17,058 USD with a fare of $660 USD per UPT.
+
+5.Which transit system (agency and mode) has the lowest expenses per VRM?
+```{r}
+lowest_expenses_per_vrm <- USAGE_AND_FINANCIALS %>%
+  filter(UPT >= 400000) %>%
+  mutate(expenses_per_vrm = Expenses / VRM) %>%
+  arrange(expenses_per_vrm) %>%
+  slice(1) %>%
+  select(Agency, Mode, expenses_per_vrm)
+
+kable(lowest_expenses_per_vrm, caption = "Transit System with Lowest Expenses per VRM in 2022")
+```
+New Mexico Department of Transportation Vanpool mode has the lowest expense per VRM. Its fare per VRM is around 0.45.
+
+6.Which transit system (agency and mode) has the highest total fares per VRM?
+```{r}
+highest_fares_per_VRM <- USAGE_AND_FINANCIALS %>%
+  mutate(fares_per_VRM = `Total Fares` / VRM)  %>%  
+  arrange(desc(fares_per_VRM)) %>%  
+  slice_max(fares_per_VRM, n = 1) 
+
+kable(highest_fares_per_VRM, caption = "Transit System with Highest Fares per VRM in 2022")
+```
+The transit system that has the highest total fares per VRM is the Ferryboat from Chicago Water Taxi (Wendella) with a total fare per VRM of $237 USD.
