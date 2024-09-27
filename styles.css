@@ -39,6 +39,7 @@ button:hover {
     background-color: #004d40; /* Darker teal on hover */
 }
 
+
 /* Navigation Bar */
 nav {
     background-color: #00838f !important; /* Turquoise navbar */
@@ -54,6 +55,20 @@ nav a {
 
 nav a:hover {
     color: #e0f7fa !important; /* Light blue on hover for contrast */
+}
+
+/* Dropdown Menu */
+.navbar .dropdown-menu {
+    background-color: #00838f; /* Keep dropdown background same as navbar */
+}
+
+.navbar .dropdown-item {
+    color: #40E0D0; /* Turquoise color for dropdown items */
+}
+
+.navbar .dropdown-item:hover {
+    color: #008B8B; /* Darker turquoise for dropdown items on hover */
+    background-color: #005757; /* Optional: darker background for hover */
 }
 
 /* Footer Styling */

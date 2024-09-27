@@ -14,11 +14,13 @@ website:
       - text: "Home"
         href: index.qmd
       - text: "Projects"
-        href: mp01.qmd
+        menu:
+          - text: "Mini Project 1"
+            href: mp01.qmd
       - text: "Contact"
-        href: contact.qmd  # New contact tab
+        href: contact.qmd  
 
 format:
   html:
     css: styles.css  
-    toc: false
+    toc: false 
