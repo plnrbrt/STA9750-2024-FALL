@@ -268,6 +268,38 @@ Here our results show us that the NYC Subway ridership went from 240,655,437 in 
 
 ### Task 4: Explore and Analyze
 
+1. Find the city with the most trips in a single month.
+```{r}
+# Calculate the highest total UPT by metro area and month
+highest_upt <- USAGE |> 
+  group_by(metro_area, month) |> 
+  summarize(total_UPT = sum(UPT, na.rm = TRUE), .groups = 'drop') |> 
+  slice_max(total_UPT, n = 1)  # Get the highest total UPT for each metro area and month
+
+kable(highest_upt, caption = "Metro Area and Month with the Highest Total UPT")
+```
+2. Which agency has the most extensive bus network based on VRM?
+```{r}
+# Calculate the agency with the highest total VRM for Motor Bus
+highest_vrm_motor_bus <- USAGE |> 
+  filter(Mode == "Bus") |>
+  group_by(Agency) |>
+  summarize(total_VRM = sum(VRM, na.rm = TRUE)) |>
+  arrange(desc(total_VRM)) |>
+  slice(1)
+
+kable(highest_vrm_motor_bus, caption = "Agency with the Highest Total VRM for Motor Bus")
+```
+3. How did overall ridership change over time from 2022 to 2024?
+```{r}
+# Calculate the total UPT by year
+annual_upt <- USAGE |> 
+  group_by(year = year(month)) |> 
+  summarize(total_UPT = sum(UPT, na.rm = TRUE)) |> 
+  arrange(year)
+
+kable(annual_upt, caption = "Total UPT by Year")
+```
 ### Task 5: Table Summarization
 Create a new table from USAGE that has annual total (sum) UPT and VRM for 2022. This will require use of the group_by, summarize, and filter functions. You will also want to use the year function, to extract a year from the month column.
 
