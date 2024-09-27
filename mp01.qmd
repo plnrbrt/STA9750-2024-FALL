@@ -201,27 +201,29 @@ Using functions filter, group_by, summarize, arrange, we are going to answer the
 
 1. What transit agency had the most total VRM in our data set?
 ```{r}
-# Transit agency with the most total VRM
+# Load necessary libraries
+library(dplyr)
+library(knitr)
+# Calculate total VRM by agency and find the agency with the most total VRM
 agency_most_vrm <- USAGE |>
   group_by(Agency) |>
   summarize(total_VRM = sum(VRM, na.rm = TRUE)) |>
   arrange(desc(total_VRM)) |>
   slice(1)  # Get the top agency
-
-print(agency_most_vrm)
+# Display the result in a table
+kable(agency_most_vrm, caption = "Transit Agency with Most Total VRM")
 ```
 The transit agency that had the most total VRM in our data set is the MTA New York City Transit, which reported a total of 10,832,855,350 VRM.
 
 2. What transit mode had the most total VRM in our data set?
 ```{r}
-# Transit mode with the most total VRM
 mode_most_vrm <- USAGE |>
   group_by(Mode) |>
   summarize(total_VRM = sum(VRM, na.rm = TRUE)) |>
   arrange(desc(total_VRM)) |>
   slice(1)  # Get the top mode
 
-print(mode_most_vrm)
+kable(mode_most_vrm, caption = "Transit Mode with Most Total VRM")
 ```
 The transit mode that had the most total VRM in our data set is the Bus with a total of 49,444,494,088 VRM.
 
@@ -235,22 +237,32 @@ NYC_Subway_trip_may_24 <- USAGE %>%
          month == "2024-05") %>%  
   summarize(total_trip = sum(UPT, na.rm = TRUE)) 
 
-NYC_Subway_trip_may_24
+kable(NYC_Subway_trip_may_24, caption = "Total Heavy Rail Trips in NYC for May 2024")
 ```
 In May 2024, 180,458,819 trips were taken on the NYC Subway (Heavy Rail).
 
 4. How much did NYC subway ridership fall between April 2019 and April 2020?
 ```{r}
+# NYC Heavy Rail ridership for April 2019
 nyc_ridership_2019 <- USAGE |>
   filter(metro_area == "New York--Jersey City--Newark, NY--NJ", Mode == "Heavy Rail", month == "2019-04-01") |>
   summarise(nyc_sub_2019 = sum(UPT, na.rm = TRUE))
-nyc_ridership_2020<- USAGE |>
+
+# NYC Heavy Rail ridership for April 2020
+nyc_ridership_2020 <- USAGE |>
   filter(metro_area == "New York--Jersey City--Newark, NY--NJ", Mode == "Heavy Rail", month == "2020-04-01") |>
-  summarise(nyc_subway_ridership_fall= sum(UPT, na.rm = TRUE))
-nyc_ridership=((nyc_ridership_2020-nyc_ridership_2019)/(nyc_ridership_2019))*100
-nyc_ridership_2019
-nyc_ridership_2020
-nyc_ridership
+  summarise(nyc_subway_ridership_fall = sum(UPT, na.rm = TRUE))
+
+# Calculate the percentage change in ridership
+nyc_ridership <- ((nyc_ridership_2020$nyc_subway_ridership_fall - nyc_ridership_2019$nyc_sub_2019) / nyc_ridership_2019$nyc_sub_2019) * 100
+
+# Combine results into a data frame for display
+results <- data.frame(
+  Year = c("April 2019", "April 2020", "Percentage Change"),
+  UPT = c(nyc_ridership_2019$nyc_sub_2019, nyc_ridership_2020$nyc_subway_ridership_fall, nyc_ridership)
+)
+
+kable(results, caption = "NYC Heavy Rail Ridership Comparison for April 2019 and April 2020")
 ```
 Here our results show us that the NYC Subway ridership went from 240,655,437 in April 2019 to 20,704,824 in April 2020.Our last piece of the code informs us that this represent a 91% ridership fall between April 2019 and April 2020.
 
@@ -313,7 +325,7 @@ USAGE_AND_FINANCIALS <- left_join(USAGE_2022_ANNUAL,
            join_by(`NTD ID`, Mode)) |>
     drop_na()
 USAGE_AND_FINANCIALS |>
-  DT::datatable()
+      DT::datatable()
 ```
 ### Task 6: Farebox Recovery Among Major Systems
 Using the USAGE_AND_FINANCIALS table,  we are going to try to answer the following questions:
@@ -346,7 +358,7 @@ The answer shows us that the MTA New York City Transit is the transit system tha
 
 2. Which transit system (agency and mode) had the highest farebox recovery (Total Fares to Expenses ratio)?
 ```{r}
-USAGE_AND_FINANCIALS |>
+highest_farebox_recovery <- USAGE_AND_FINANCIALS |>
   group_by(Agency, Mode) |>
   summarize(
     total_fares = sum(`Total Fares`, na.rm = TRUE),
@@ -356,36 +368,42 @@ USAGE_AND_FINANCIALS |>
   ungroup() |>
   arrange(desc(farebox_recovery_ratio)) |>
   slice_head(n = 1)
+kable(highest_farebox_recovery, caption = "Transit System with Highest Farebox Recovery Ratio")
 ```
 The Transit System with the highest recovery ratio is the Transit Authority of Central Kentuchy, with the Vanpool mode and a recovery ratio of $2.38 USD.
 
 3.Which transit system (agency and mode) has the lowest expenses per UPT?
 ```{r}
-USAGE_AND_FINANCIALS|>
+lowest_expenses_per_upt <- USAGE_AND_FINANCIALS |>
   group_by(Agency, Mode) |>
   summarize(
     total_expenses = sum(Expenses, na.rm = TRUE),
-    total_UPT = sum(UPT, na.rm = TRUE)) |>
+    total_UPT = sum(UPT, na.rm = TRUE)
+  ) |>
   filter(total_UPT >= 400000) |>
-    mutate (expenses_per_UPT = total_expenses/total_UPT)|>
+  mutate(expenses_per_UPT = total_expenses / total_UPT) |>
   ungroup() |>
   arrange(expenses_per_UPT) |>
   slice_head(n = 1)
+
+kable(lowest_expenses_per_upt, caption = "Transit System with Lowest Expenses per UPT")
 ```
 North Carolina State University is the agency with the lowest expenses per UPT with the Bus mode. The expenses per UPT is $1.18 USD.
 
 4.Which transit system (agency and mode) has the highest total fares per UPT?
 ```{r}
-USAGE_AND_FINANCIALS|>
+highest_fares_per_upt <- USAGE_AND_FINANCIALS |>
   group_by(Agency, Mode) |>
   summarize(
     total_fares1 = sum(`Total Fares`, na.rm = TRUE),
-    total_UPT = sum(UPT, na.rm = TRUE)) |>
-  
-  mutate (total_fares_per_UPT = total_fares1/total_UPT)|>
+    total_UPT = sum(UPT, na.rm = TRUE)
+  ) |>
+  mutate(total_fares_per_UPT = total_fares1 / total_UPT) |>
   ungroup() |>
   arrange(desc(total_fares_per_UPT)) |>
   slice_head(n = 1)
+
+kable(highest_fares_per_upt, caption = "Transit System with Highest Total Fares per UPT")
 ```
 The Altoona Metro Transit with the Demand Response mode had the highest total fares per UPT. With just 26 trips, it collected a total in fares of $17,058 USD with a fare of $660 USD per UPT.
 
