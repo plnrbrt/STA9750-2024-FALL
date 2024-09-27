@@ -462,3 +462,47 @@ highest_fares_per_VRM <- USAGE_AND_FINANCIALS %>%
 kable(highest_fares_per_VRM, caption = "Transit System with Highest Fares per VRM in 2022")
 ```
 The transit system that has the highest total fares per VRM is the Ferryboat from Chicago Water Taxi (Wendella) with a total fare per VRM of $237 USD.
+
+## Conclusion from the Mini Project 1 Analysis
+
+This mini project provides several key insights into the fiscal characteristics, ridership, and operational efficiency of major U.S. public transit systems in 2022, based on data from the National Transit Database. Below are the major conclusions derived from each analysis:
+
+1. Most Total Vehicle Revenue Miles (VRM)
+
+Transit Agency: The MTA New York City Transit had the highest total Vehicle Revenue Miles (VRM) with over 10.8 billion VRM.
+Transit Mode: Buses had the most total VRM, accumulating more than 49.4 billion VRM across agencies.
+This indicates that the MTA operates the largest transit network in terms of vehicle miles, reflecting its role in serving a massive, densely populated area like New York City. Buses are crucial across transit systems, covering extensive distances.
+
+2. Ridership Insights
+
+NYC Subway Ridership: In May 2024, there were approximately 180 million trips taken on the NYC Subway (Heavy Rail), showing the continued importance of the subway in daily transportation.
+Ridership Decline: NYC Subway ridership fell drastically between April 2019 and April 2020 by 91%, primarily due to the COVID-19 pandemic, reflecting the severe impact of external shocks like pandemics on public transit usage.
+This emphasizes how ridership levels can be highly volatile in response to global events, such as health crises, with significant consequences for transit agencies' revenue and service planning.
+
+3. Highest Ridership in a Single Month
+
+Metro Area: New York–Jersey City–Newark, NY–NJ had the highest number of trips in a single month (October 2014), with nearly 396 million unlinked passenger trips (UPT).
+This reinforces New York City’s dominance as the leading metropolitan area in the U.S. in terms of public transit usage, particularly for heavy rail and bus systems.
+
+4. Bus Network Extent
+
+Agency with Most Extensive Bus Network: New Jersey Transit Corporation had the most extensive bus network based on VRM, with over 3.78 billion VRM, reflecting its widespread service area and role in connecting commuters across state lines.
+
+5. Ridership Trends (2022-2024)
+
+Ridership saw a gradual recovery post-pandemic, with total UPT increasing from 6 billion in 2022 to nearly 7 billion in 2023. However, it significantly dropped again in 2024 to just over 4.18 billion, potentially indicating further external factors or a slow post-pandemic recovery.
+
+6. Annual UPT and VRM for 2022
+
+The analysis of UPT and VRM by transit mode and metro area in 2022 highlights regional differences in transit usage and network extent. For instance, King County (Seattle) had significant bus usage and VRM.
+
+7. Farebox Recovery and Financial Efficiency
+
+Highest Farebox Recovery: The Transit Authority of Central Kentucky had the highest farebox recovery ratio at 2.38, meaning the system collected more in fares than it spent on expenses (a rare occurrence in public transit).
+Lowest Expenses per UPT: A yet-to-be-confirmed agency/mode from the final analysis had the lowest expenses per UPT, reflecting operational efficiency in terms of cost per passenger.
+These insights into farebox recovery and financial efficiency help identify which systems are more sustainable and cost-effective, and which may require additional subsidies or fare increases to maintain financial stability.
+
+# Overall Conclusion
+The project underscores the critical role that public transit systems like the MTA and New Jersey Transit play in urban mobility, especially in large metropolitan areas like New York City. However, the data also reveals significant vulnerabilities, particularly in ridership declines during major events like the pandemic, which drastically impacted revenue generation.
+
+The findings related to farebox recovery, VRM, and UPT offer insights into which transit systems are the most efficient and financially viable, with a focus on reducing operational expenses and optimizing fare collection to meet expenses.
