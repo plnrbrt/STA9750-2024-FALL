@@ -17,6 +17,8 @@ website:
         menu:
           - text: "Mini Project 1"
             href: mp01.qmd
+          - text: "Mini Project 2"
+            href: mp02.qmd
       - text: "Contact"
         href: contact.qmd  
 
