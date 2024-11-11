@@ -1,2 +1,9 @@
 /.quarto/
 .Rproj.user
+*/*_cache/* 
+*tsv* 
+*csv* 
+*xlsx* 
+*zip 
+.DS_Store 
+.Rhistory
