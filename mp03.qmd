@@ -595,12 +595,12 @@ From the table summarizing historical presidential election results using the st
 1. Landslide Victories:
 Ronald Reagan's elections in 1980 (489 electoral votes) and 1984 (525 electoral votes) showcase some of the largest margins of victory, indicating strong bipartisan appeal or a dominant Republican electorate during those years.
 Other significant victories include George H.W. Bush in 1988 (426 electoral votes) and Barack Obama in 2008 (364 electoral votes), suggesting periods of broad public support for the winning candidate.
-2.Close Contests:
+2. Close Contests:
 The elections of 2000 (George W. Bush with 271 votes) and 2020 (Joe Biden with 306 votes) highlight narrow wins, reflecting closely divided electorates. These results demonstrate the pivotal role of swing states in determining outcomes under the winner-take-all rule.
-3.Partisan Shifts:
+3. Partisan Shifts:
 Democratic candidates like Jimmy Carter (1976), Bill Clinton (1992, 1996), and Barack Obama (2008, 2012) consistently achieved strong showings, suggesting periods of Democratic dominance in national politics.
 Republican successes in the 1980s (Reagan and Bush) and early 2000s (George W. Bush) illustrate periods of conservative momentum.
-4.Electoral Votes Over Time:
+4. Electoral Votes Over Time:
 The total number of electoral votes for the winning candidate has fluctuated significantly, reflecting changes in political landscapes and voter behavior in various states over time.
 These trends provide insights into the dynamics of the U.S. Electoral College system and the impact of the winner-take-all rule on presidential election outcomes.
 
