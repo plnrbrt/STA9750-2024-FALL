@@ -651,7 +651,7 @@ From the District-Wide Winner-Take-All + State-Wide "At Large" Votes table, we c
 1. Electoral Votes Vary: The total electoral votes for the winning candidate fluctuate by year, showing how electoral vote distribution changes with time.
 2. Impact of At-Large Votes: Winning the popular vote in a state grants an additional 2 at-large electoral votes, which can influence the outcome when combined with district wins.
 3. Electoral Trends: While some years show a large margin of electoral votes (e.g., Carter in 1976), others, like Trump in 2016, reflect more competitive outcomes with around 300 electoral votes.
-4. State-Wide and District Effects: District-wide wins combined with state-wide "at large" votes affect the final presidential electoral count, often reflecting party dominance in the state.
+4. State-Wide and District Effects: District-wide wins combined with state-wide "at large" votes affect the final presidential electoral count, often reflecting party dominance in the state. 
 
 Now, we will at the State-Wide Proportional scheme effects on presidential elections.
 
