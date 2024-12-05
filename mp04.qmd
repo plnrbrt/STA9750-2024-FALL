@@ -7,7 +7,9 @@ format:
 ---
 
 # Introduction
-Welcome to Mini-Project #04! In this project, we will use R to make an important personal financial decision. New faculty hired at CUNY have 30 days to choose one of two retirement plans. This is an important and early choice that faculty must make, as it is essentially permanent and cannot be changed. Financial forecasting is quite difficult, and it is far from clear which plan is the better long-term choice. In this mini-project, we will use historical financial data and a bootstrap inference strategy to estimate the probability that one plan is better than the other.
+
+In this project, we will use R to make an important personal financial decision. New faculty hired at CUNY have 30 days to choose one of two retirement plans. This is an important and early choice that faculty must make, as it is essentially permanent and cannot be changed. Financial forecasting is quite difficult, and it is far from clear which plan is the better long-term choice. In this mini-project, we will use historical financial data and a bootstrap inference strategy to estimate the probability that one plan is better than the other.
+
 ```{r, echo=TRUE, results='hide', warning=FALSE, message=FALSE}
 library(stringr)
 library(gt)
