@@ -671,4 +671,111 @@ cat("Maximum Monthly Income Gap (TRS - ORP):", max_gap, "\n")
 cat("Minimum Monthly Income Gap (TRS - ORP):", min_gap, "\n")
 
 ```
+```{R, echo = TRUE, message = FALSE, warning = FALSE} 
 
+```
+
+```{R, echo = TRUE, message = FALSE, warning = FALSE} 
+library(shiny)
+library(shinylive)
+library(ggplot2)
+library(dplyr)
+
+# Define UI for simulation dashboard
+ui <- fluidPage(
+  titlePanel("Retirement Plan Simulation Dashboard"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      # Input fields for simulation parameters
+      numericInput("starting_salary", 
+                   "Starting Salary", 
+                   value = 50000, min = 30000, max = 200000, step = 500),
+      
+      numericInput("retirement_age", 
+                   "Retirement Age", 
+                   value = 65, min = 50, max = 80, step = 1),
+      
+      sliderInput("monte_carlo_histories", 
+                  "Number of Monte Carlo Histories", 
+                  min = 100, max = 5000, value = 200),
+      
+      selectInput("data_series", 
+                  "Choose Data Series for Resampling", 
+                  choices = c("Stock Market", "Bond Market", "Mixed Portfolio"),
+                  selected = "Stock Market"),
+      
+      dateRangeInput("historical_data_dates", 
+                     "Select Date Range for Historical Data", 
+                     start = "2000-01-01", end = "2020-12-31"),
+      
+      actionButton("run_simulation", "Run Simulation")
+    ),
+    
+    mainPanel(
+      # Output plot for simulation results
+      plotOutput("simulation_plot"),
+      
+      # Display Monte Carlo results as a table
+      tableOutput("monte_carlo_results")
+    )
+  )
+)
+
+# Define server logic for the simulation
+server <- function(input, output, session) {
+  
+  # Define function to run the simulation
+  run_simulation <- reactive({
+    # Retrieve user inputs
+    starting_salary <- input$starting_salary
+    retirement_age <- input$retirement_age
+    monte_carlo_histories <- input$monte_carlo_histories
+    data_series <- input$data_series
+    historical_data_dates <- input$historical_data_dates
+    
+    # Example simulation logic (you would replace this with your model)
+    set.seed(42)  # Set seed for reproducibility
+    
+    # Generate random simulations (you'd replace this with actual financial models)
+    results <- replicate(monte_carlo_histories, {
+      future_salary <- starting_salary * (1 + rnorm(1, 0.03, 0.02)) ^ (retirement_age - 30)  # Random salary growth
+      future_savings <- future_salary * 0.15 * (retirement_age - 30)  # Example of savings estimate
+      future_savings
+    })
+    
+    # Package the results into a list for output
+    list(
+      results = results,
+      future_salary = future_salary,
+      future_savings = future_savings
+    )
+  })
+  
+  # Render the Monte Carlo plot
+  output$simulation_plot <- renderPlot({
+    sim_results <- run_simulation()
+    ggplot(data.frame(value = sim_results$results), aes(x = value)) +
+      geom_histogram(binwidth = 10000, fill = "skyblue", color = "black") +
+      labs(title = "Distribution of Future Savings Across Simulations", 
+           x = "Savings at Retirement", y = "Frequency")
+  })
+  
+  # Render Monte Carlo results table
+  output$monte_carlo_results <- renderTable({
+    sim_results <- run_simulation()
+    data.frame(
+      Simulation = 1:length(sim_results$results),
+      Savings = sim_results$results
+    )
+  })
+  
+  # Trigger the simulation when the button is clicked
+  observeEvent(input$run_simulation, {
+    run_simulation()  # Re-run simulation when the button is clicked
+  })
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
+```
