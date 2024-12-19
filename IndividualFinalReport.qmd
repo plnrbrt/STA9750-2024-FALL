@@ -1,0 +1,337 @@
+---
+title: "Individual Final Report - Analyzing Airbnb Market Trends for NYC 
+in 2019 and 2023"
+author: "Pauline Robert"
+editor: visual
+---
+<center>
+![ ](Airbnb-logo.png){width=70% height=70%}
+</center>
+
+  As members of the **Listing Legends** team, our project explored the impact of property characteristics such as type, location, and availability, and host reputation, including reviews and the number of listings, on Airbnb pricing in NYC. Our analysis draws on data from 2019 and 2023 that we retrived from Kaggle.
+ 
+  My specific question for this project was to focus on the influence of the Airbnb listing locations on the price per night. When landlords and tenants list their home or a room of their apartment on Airbnb, the general motivation to determine the price per night is to cover a part of the amount of rent they pay per month or the mortgage they need to reimburse. That is why I chose to compare the average price per night per neighborhood group on Airbnb to the average median asking rent per borough in New York City. [StreetEasy](https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://streeteasy.com/blog/data-dashboard/&ved=2ahUKEwjwjqCO0J6KAxXkl4kEHWuoHFAQFnoECBUQAQ&usg=AOvVaw1zdIm6ptJWPKsGgQN1weVB) provides data about the housing market of NYC from 2010 to 2024.
+ 
+## StreetEasy Data Manipulation
+
+### 1. Data Downloading 
+
+  To start my analysis, I downloaded all the necessary library packages:
+```{r, echo=TRUE, results='hide', warning=FALSE, message=FALSE}
+library(knitr)
+library(httr)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(plotly)
+```
+
+  The next step is to download the [Median Asking Rent per Borough](https://cdn-charts.streeteasy.com/rentals/All/medianAskingRent_All.zip?_ga=2.55931043.945781993.1730314388-725217219.1730314388) from StreetEasy with the following code:
+```{r, echo=TRUE,warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,fold=TRUE}
+# Function to safely download and extract the dataset
+safe_download_extract <- function(url, zip_file, extract_dir) {
+  tryCatch({
+    download.file(url, destfile = zip_file, mode = "wb")
+    if (file.exists(zip_file)) {
+      unzip(zip_file, exdir = extract_dir)
+      return(TRUE)
+    } else {
+      message("Failed to download the file.")
+      return(FALSE)
+    }
+  }, error = function(e) {
+    message("Error in downloading or extracting: ", e$message)
+    return(FALSE)
+  })
+}
+
+# Function to safely read CSV
+safe_read_csv <- function(file_path) {
+  tryCatch({
+    df <- read_csv(file_path)
+    if (nrow(df) > 0) {
+      return(df)
+    } else {
+      message("The CSV file is empty.")
+      return(NULL)
+    }
+  }, error = function(e) {
+    message("Error reading CSV: ", e$message)
+    return(NULL)
+  })
+}
+
+# Main execution
+url <- 'https://cdn-charts.streeteasy.com/rentals/All/medianAskingRent_All.zip?_ga=2.55931043.945781993.1730314388-725217219.1730314388'
+zip_file <- "medianAskingRent_All.zip"
+extract_dir <- "StreetEasyAskingRentData"
+data_file_path <- file.path(extract_dir, "medianAskingRent_All.csv")
+```
+
+### 2. Visualization
+After our data has been downloaded and unzip in our files, we can start visualizing our data. I chose to code a bar chart because it is easy ti interpret and clearly show differences in values between groups, helping to analyze trends over time. 
+
+Our columns in the StreetEasy datasets are named as following "2010-01". So we first have the Year and then the Month number. In order to be able to regroup only the values for 2019 and 2023, I used the <span style="background-color: #f3f0ff; color: purple; font-family: monospace;">pivot_longer()</span> function to "melt" the dataframe, transforming the wide-format data with columns for each month into a long-format structure. This makes it easier to group, filter, and summarize the data by borough. The long format also simplifies plotting and statistical operations, as it aligns each value with its corresponding borough and time period in a single column. 
+Here is the code for 2019 Average Median Asking Price per Borough in NYC visual:
+```{r, echo=TRUE,warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE, fold=TRUE}
+# Step 1: Download and extract
+if (!safe_download_extract(url, zip_file, extract_dir)) {
+  stop("Failed to download or extract the dataset.")
+}
+
+# Step 2: Load the data
+df <- safe_read_csv(data_file_path)
+if (is.null(df)) {
+  stop("Failed to read the CSV file.")
+}
+
+
+# Step 3: Prepare the Data
+# Select only the columns for 2019
+cols_2019 <- c("areaName", "Borough", "areaType", grep("^2019-", names(df), value = TRUE))
+df_2019 <- df[, cols_2019]
+
+# Melt the dataframe
+df_melted <- df_2019 %>%
+  pivot_longer(cols = starts_with("2019-"),
+               names_to = "YearMonth",
+               values_to = "MedianAskingRent")
+
+df_melted$YearMonth <- ym(df_melted$YearMonth)
+
+# Calculate average median rent per borough for 2019
+avg_median_rent_2019 <- df_melted %>%
+  group_by(Borough) %>%
+  summarize(MedianAskingRent = mean(MedianAskingRent, na.rm = TRUE))
+
+# Create a bar chart for 2019 with custom colors
+color_map <- c(
+  'Manhattan' = '#7FD4C1',
+  'Brooklyn' = '#30BFDD',
+  'Queens' = '#8690FF',
+  'Bronx' = '#ACD0F4',
+  'Staten Island' = '#F7C0BB'
+)
+
+fig_ST_2019 <- plot_ly(avg_median_rent_2019, x = ~Borough, y = ~MedianAskingRent, type = 'bar',
+               color = ~Borough, colors = color_map) %>%
+  layout(title = 'Average Median Asking Rent by Borough in 2019 in NYC<br><sup>Data from StreetEasy</sup>',
+         xaxis = list(title = 'Borough'),
+         yaxis = list(title = 'Average Median Asking Rent'),
+         plot_bgcolor = 'white',
+         paper_bgcolor = 'white',
+         width = 600,
+         height = 600)
+
+# Show the plot
+fig_ST_2019
+```
+
+
+Here is the code for 2023 Average Median Asking Price per Borough in NYC visual:
+```{r, echo=TRUE,warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE, fold=TRUE}
+# Step 1: Download and extract
+if (!safe_download_extract(url, zip_file, extract_dir)) {
+  stop("Failed to download or extract the dataset.")
+}
+
+# Step 2: Load the data
+df <- safe_read_csv(data_file_path)
+if (is.null(df)) {
+  stop("Failed to read the CSV file.")
+}
+
+# Step 3: Prepare the Data
+# Select only the columns for 2023
+cols_2023 <- c("areaName", "Borough", "areaType", grep("^2023-", names(df), value = TRUE))
+df_2023 <- df[, cols_2023]
+
+# Melt the dataframe
+df_melted <- df_2023 %>%
+  pivot_longer(cols = starts_with("2023-"),
+               names_to = "YearMonth",
+               values_to = "MedianAskingRent")
+
+df_melted$YearMonth <- ym(df_melted$YearMonth)
+
+# Calculate average median rent per borough for 2023
+avg_median_rent_2023 <- df_melted %>%
+  group_by(Borough) %>%
+  summarize(MedianAskingRent = mean(MedianAskingRent, na.rm = TRUE))
+
+# Create a bar chart for 2023 with custom colors
+color_map <- c(
+  'Manhattan' = '#7FD4C1',
+  'Brooklyn' = '#30BFDD',
+  'Queens' = '#8690FF',
+  'Bronx' = '#ACD0F4',
+  'Staten Island' = '#F7C0BB'
+)
+
+fig_ST_2023 <- plot_ly(avg_median_rent_2023, x = ~Borough, y = ~MedianAskingRent, type = 'bar',
+               color = ~Borough, colors = color_map) %>%
+  layout(title = 'Average Median Asking Rent by Borough in 2023 in NYC<br><sup>Data from StreetEasy</sup>',
+         xaxis = list(title = 'Borough'),
+         yaxis = list(title = 'Average Median Asking Rent'),
+         plot_bgcolor = 'white',
+         paper_bgcolor = 'white',
+         width = 600,
+         height = 600)
+
+# Show the plot
+fig_ST_2023
+```
+
+## Kaggle Airbnb Data Manipulation
+
+### 1. Data Downloading 
+For the data collected from Kaggle, I dowloaded the data sets directly from the Kaggle website. We use for 2019 the data set from the Kaggle project [New York City Airbnb Open Data](https://www.kaggle.com/datasets/dgomonov/new-york-city-airbnb-open-data), and for 2023, we took the data set [New York City Airbnb 2023, Public Data](https://www.kaggle.com/datasets/godofoutcasts/new-york-city-airbnb-2023-public-data). Both of those Kaggle projects took their data from [Inside Airbnb](https://insideairbnb.com). This website provides a lot of different data about Airbnb but getting that data is not free, that is why we chose to download those data sets from Kaggle.
+
+Once the data sets are downloaded into our files, we can start building our visual.
+
+### 2. Visualization
+
+For my visual, I am going to focus on the columns "price" and "neighborhood_group". After exploring the details of the values inside those columns, I realized that the column "price" has very high values. This might be explained by the fact that there are in NYC some more high-end Airbnb listing and therefor it attracts the average night price up which can make our observations not really accurate as most of those luxury listings are mostly based in Manhattan. To have a more realistic visual, I decided to handle those outliers and replace them by the mean so that we do not drop all those listing numbers.
+
+Here is the code to handle the outliers and create the visual:
+```{r, echo=TRUE,warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+# Step 1: Load the datasets
+df_2019 <- read_csv('AB_NYC_2019.csv')
+df_2023 <- read_csv('NYC-Airbnb-2023.csv')
+
+# Step 2: Replace outliers in the 'price' column with the mean
+replace_outliers_with_mean <- function(df, column, lower_quantile = 0.05, upper_quantile = 0.95) {
+  lower_bound <- quantile(df[[column]], lower_quantile)
+  upper_bound <- quantile(df[[column]], upper_quantile)
+  mean_value <- mean(df[[column]][df[[column]] >= lower_bound & df[[column]] <= upper_bound])
+  df[[column]] <- ifelse(df[[column]] < lower_bound | df[[column]] > upper_bound, mean_value, df[[column]])
+  return(df)
+}
+
+df_2019_clean <- replace_outliers_with_mean(df_2019, 'price')
+df_2023_clean <- replace_outliers_with_mean(df_2023, 'price')
+
+# Step 3: Calculate average price per neighborhood_group
+avg_price_2019 <- df_2019_clean %>%
+  group_by(neighbourhood_group) %>%
+  summarize(price = mean(price))
+
+avg_price_2023 <- df_2023_clean %>%
+  group_by(neighbourhood_group) %>%
+  summarize(price = mean(price))
+
+# Step 4: Create bar charts for 2019 and 2023
+color_map <- c(
+  'Manhattan' = '#7FD4C1',
+  'Brooklyn' = '#30BFDD',
+  'Queens' = '#8690FF',
+  'Bronx' = '#ACD0F4',
+  'Staten Island' = '#F7C0BB'
+)
+
+fig_2019 <- plot_ly(avg_price_2019, x = ~neighbourhood_group, y = ~price, type = 'bar',
+                    color = ~neighbourhood_group, colors = color_map) %>%
+  layout(title = 'Average Airbnb Price by Neighborhood Group in NYC (2019)<br><sup>Data from Airbnb</sup>',
+         xaxis = list(title = 'Neighborhood Group'),
+         yaxis = list(title = 'Average Price ($)'),
+         plot_bgcolor = 'white',
+         paper_bgcolor = 'white',
+         width = 600,
+         height = 600)
+
+fig_2023 <- plot_ly(avg_price_2023, x = ~neighbourhood_group, y = ~price, type = 'bar',
+                    color = ~neighbourhood_group, colors = color_map) %>%
+  layout(title = 'Average Airbnb Price by Neighborhood Group in NYC (2023)<br><sup>Data from Airbnb</sup>',
+         xaxis = list(title = 'Neighborhood Group'),
+         yaxis = list(title = 'Average Price ($)'),
+         plot_bgcolor = 'white',
+         paper_bgcolor = 'white',
+         width = 600,
+         height = 600)
+```
+
+Here is our visual for 2019:
+
+```{r, echo=TRUE ,warning=FALSE, message=FALSE}
+fig_2019
+```
+
+Here is our visual for 2023:
+```{r, echo=TRUE ,warning=FALSE, message=FALSE, collapse=FALSE}
+fig_2023
+```
+
+## Analysis of Airbnb Prices and Median Asking Rents in NYC
+
+#### 2023: Neighborhood Group Pricing Trends
+
+In 2023, both Airbnb pricing and median asking rents across NYC boroughs reflect a consistent pattern where higher long-term rental costs correspond to higher short-term rental prices:
+
+- **Manhattan**:  
+  - Average Airbnb price: $160 per night  
+  - Median asking rent: $4,500 per month  
+
+- **Brooklyn**:  
+  - Average Airbnb price: $140 per night  
+  - Median asking rent: $3,500 per month  
+
+- **Queens**:  
+  - Average Airbnb price: $120 per night  
+  - Median asking rent: $2,700 per month  
+
+- **Staten Island**:  
+  - Average Airbnb price: $100 per night  
+  - Median asking rent: $2,200 per month  
+
+- **Bronx**:  
+  - Average Airbnb price: $80 per night  
+  - Median asking rent: $2,000 per month  
+
+#### Comparison with 2019 Data
+
+In 2019, both Airbnb prices and median rents were lower, but the borough rankings remained consistent:
+
+- **Manhattan**:  
+  - Average Airbnb price: $140 per night  
+  - Median asking rent: $3,500 per month  
+
+- **Brooklyn**:  
+  - Average Airbnb price: $120 per night  
+  - Median asking rent: $3,000 per month  
+
+- **Queens**:  
+  - Average Airbnb price: $100 per night  
+  - Median asking rent: $2,400 per month  
+
+- **Staten Island**:  
+  - Average Airbnb price: $80 per night  
+  - Median asking rent: $2,000 per month  
+
+- **Bronx**:  
+  - Average Airbnb price: $60 per night  
+  - Median asking rent: $1,800 per month  
+
+#### Key Observations and Insights
+
+1. **Consistent Borough Hierarchy**:  
+   Manhattan and Brooklyn consistently lead both Airbnb and median rent markets, indicating that these boroughs are premium locations in NYC's real estate landscape. The Bronx remains the most affordable, with the lowest prices for both markets in 2019 and 2023.
+
+2. **Growth in Pricing**:  
+   - From 2019 to 2023, median asking rents increased sharply in Manhattan (up $1,000) and Brooklyn (up $500), reflecting rising demand or increased cost of living in these areas.  
+   - Similarly, Airbnb prices rose by $20 in Manhattan and Brooklyn, aligning with these broader market trends.
+
+3. **Proportional Increases**:  
+   Across all boroughs, the percentage increases in Airbnb prices roughly correspond to increases in median asking rents, suggesting a direct relationship between the long-term rental market and short-term rental pricing.
+
+4. **Queens and Staten Island Dynamics**:  
+   Both boroughs show moderate increases in Airbnb and median rent prices, maintaining their mid-tier affordability status within the city.
+
+#### Conclusion
+
+The data clearly illustrate a strong link between median asking rents and Airbnb listing prices, with neighborhood group rankings remaining consistent over time. Manhattan and Brooklyn stand out as premium markets for both short-term and long-term rentals, driven by higher demand and rising costs. The significant price increases between 2019 and 2023 suggest broader economic and market changes, such as inflation, increased tourism, or heightened demand for housing in these areas. Further statistical analysis could provide deeper insights into the exact drivers behind these trends and their potential implications for renters and Airbnb hosts.
+
+
+<center>
+![ ](airbnb_logo_4things.png)
+</center>
