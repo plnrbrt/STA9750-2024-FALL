@@ -17,7 +17,7 @@ editor: visual
 ### 1. Data Downloading 
 
   To start my analysis, I downloaded all the necessary library packages:
-```{r, echo=TRUE, results='hide', warning=FALSE, message=FALSE}
+```{r, echo = TRUE, results = "hide", message = FALSE, warning = FALSE}
 library(knitr)
 library(httr)
 library(readr)
@@ -28,7 +28,7 @@ library(plotly)
 ```
 
   The next step is to download the [Median Asking Rent per Borough](https://cdn-charts.streeteasy.com/rentals/All/medianAskingRent_All.zip?_ga=2.55931043.945781993.1730314388-725217219.1730314388) from StreetEasy with the following code:
-```{r, echo=TRUE,warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,fold=TRUE}
+```{r, echo = TRUE, results = "hide", message = FALSE, warning = FALSE}
 # Function to safely download and extract the dataset
 safe_download_extract <- function(url, zip_file, extract_dir) {
   tryCatch({
@@ -74,7 +74,7 @@ After our data has been downloaded and unzip in our files, we can start visualiz
 
 Our columns in the StreetEasy datasets are named as following "2010-01". So we first have the Year and then the Month number. In order to be able to regroup only the values for 2019 and 2023, I used the <span style="background-color: #f3f0ff; color: purple; font-family: monospace;">pivot_longer()</span> function to "melt" the dataframe, transforming the wide-format data with columns for each month into a long-format structure. This makes it easier to group, filter, and summarize the data by borough. The long format also simplifies plotting and statistical operations, as it aligns each value with its corresponding borough and time period in a single column. 
 Here is the code for 2019 Average Median Asking Price per Borough in NYC visual:
-```{r, echo=TRUE,warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE, fold=TRUE}
+```{r, echo = TRUE, results = "hide", message = FALSE, warning = FALSE}
 # Step 1: Download and extract
 if (!safe_download_extract(url, zip_file, extract_dir)) {
   stop("Failed to download or extract the dataset.")
@@ -130,7 +130,7 @@ fig_ST_2019
 
 
 Here is the code for 2023 Average Median Asking Price per Borough in NYC visual:
-```{r, echo=TRUE,warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE, fold=TRUE}
+```{r, echo = TRUE, results = "hide", message = FALSE, warning = FALSE}
 # Step 1: Download and extract
 if (!safe_download_extract(url, zip_file, extract_dir)) {
   stop("Failed to download or extract the dataset.")
@@ -195,7 +195,7 @@ Once the data sets are downloaded into our files, we can start building our visu
 For my visual, I am going to focus on the columns "price" and "neighborhood_group". After exploring the details of the values inside those columns, I realized that the column "price" has very high values. This might be explained by the fact that there are in NYC some more high-end Airbnb listing and therefor it attracts the average night price up which can make our observations not really accurate as most of those luxury listings are mostly based in Manhattan. To have a more realistic visual, I decided to handle those outliers and replace them by the mean so that we do not drop all those listing numbers.
 
 Here is the code to handle the outliers and create the visual:
-```{r, echo=TRUE,warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+```{r, echo = TRUE, results = "hide", message = FALSE, warning = FALSE}
 # Step 1: Load the datasets
 df_2019 <- read_csv('AB_NYC_2019.csv')
 df_2023 <- read_csv('NYC-Airbnb-2023.csv')
@@ -253,12 +253,12 @@ fig_2023 <- plot_ly(avg_price_2023, x = ~neighbourhood_group, y = ~price, type =
 
 Here is our visual for 2019:
 
-```{r, echo=TRUE ,warning=FALSE, message=FALSE}
+```{r, echo = TRUE, results = "hide", message = FALSE, warning = FALSE}
 fig_2019
 ```
 
 Here is our visual for 2023:
-```{r, echo=TRUE ,warning=FALSE, message=FALSE, collapse=FALSE}
+```{r, echo = TRUE, results = "hide", message = FALSE, warning = FALSE}
 fig_2023
 ```
 
