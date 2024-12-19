@@ -327,7 +327,7 @@ In 2019, both Airbnb prices and median rents were lower, but the borough ranking
 4. **Queens and Staten Island Dynamics**:  
    Both boroughs show moderate increases in Airbnb and median rent prices, maintaining their mid-tier affordability status within the city.
 
-#### Conclusion
+## Conclusion
 
 The data clearly illustrate a strong link between median asking rents and Airbnb listing prices, with neighborhood group rankings remaining consistent over time. Manhattan and Brooklyn stand out as premium markets for both short-term and long-term rentals, driven by higher demand and rising costs. The significant price increases between 2019 and 2023 suggest broader economic and market changes, such as inflation, increased tourism, or heightened demand for housing in these areas. Further statistical analysis could provide deeper insights into the exact drivers behind these trends and their potential implications for renters and Airbnb hosts.
 
