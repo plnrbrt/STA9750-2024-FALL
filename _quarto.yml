@@ -26,6 +26,6 @@ website:
 
 format:
   html:
-    theme: journal 
+    theme: Journal 
     toc: false
 
