@@ -1,6 +1,5 @@
 ---
-title: "Individual Final Report - Analyzing Airbnb Market Trends for NYC 
-in 2019 and 2023"
+title: "Individual Final Report: Listing Legends"
 author: "Pauline Robert"
 format:
   html:
@@ -10,7 +9,11 @@ format:
 <center>
 ![ ](Airbnb-logo.png){width=70% height=70%}
 </center>
+<center> 
+# <span style="color:#FF5A5F;">Analyzing Airbnb Market Trends for NYC</span>
+</center>
 
+  <br>
   As members of the **Listing Legends** team, our project explored the impact of property characteristics such as type, location, and availability, and host reputation, including reviews and the number of listings, on Airbnb pricing in NYC. Our analysis draws on data from 2019 and 2023 that we retrived from Kaggle.
  
   My specific question for this project was **"How do rental prices vary by neighborhood in New York City?"**. So I focused on the influence of the Airbnb listing locations on the price per night. When landlords and tenants list their home or a room of their apartment on Airbnb, the general motivation to determine the price per night is to cover a part of the amount of rent they pay per month or the mortgage they need to reimburse. That is why I chose to compare the average price per night per neighborhood group on Airbnb to the average median asking rent per borough in New York City. [StreetEasy](https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://streeteasy.com/blog/data-dashboard/&ved=2ahUKEwjwjqCO0J6KAxXkl4kEHWuoHFAQFnoECBUQAQ&usg=AOvVaw1zdIm6ptJWPKsGgQN1weVB) provides data about the housing market of NYC from 2010 to 2024.
@@ -132,8 +135,7 @@ fig_ST_2019 <- plot_ly(avg_median_rent_2019, x = ~Borough, y = ~MedianAskingRent
 fig_ST_2019
 ```
 
-
-Here is the code for **2023 Average Median Asking Price per Borough in NYC** visual:
+<br>Here is the code for **2023 Average Median Asking Price per Borough in NYC** visual:
 
 ```{r, echo = TRUE, message = FALSE, warning = FALSE}
 # Step 1: Download and extract
@@ -256,13 +258,13 @@ fig_2023 <- plot_ly(avg_price_2023, x = ~neighbourhood_group, y = ~price, type =
          height = 600)
 ```
 
-Here is our visual for 2019:
+<br>Here is our visual for 2019:
 
 ```{r, echo = TRUE, message = FALSE, warning = FALSE}
 fig_2019
 ```
 
-Here is our visual for 2023:
+<br>Here is our visual for 2023:
 ```{r, echo = TRUE, message = FALSE, warning = FALSE}
 fig_2023
 ```
