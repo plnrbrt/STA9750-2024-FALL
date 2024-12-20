@@ -4,6 +4,7 @@ in 2019 and 2023"
 author: "Pauline Robert"
 format:
   html:
+    theme: journal
     code-fold: true
 ---
 <center>
