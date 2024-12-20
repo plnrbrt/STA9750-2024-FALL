@@ -1,6 +1,7 @@
 ---
 title: "Final Report- Listing Legends: 
 Analyzing Airbnb Market Trends for NYC"
+author: "Pauline Robert, Cristel Zuniga, Juan Camilo Martínez, Cheick Diallo"
 format:
   html:
     code-fold: true
@@ -536,6 +537,461 @@ ggplot() +
 The maps above shows the distribution of Airbnb reviews/bookings across different boroughs in New York City (NYC) in 2019 and 2023. There appears to be a shift in the areas with the highest concentration of reviews. In 2019, Manhattan and parts of Brooklyn had the most intense activity. By 2023, the concentration seems to have shifted slightly, with some areas in Brooklyn and Queens showing higher relative activity.
 
 In conclusion, the Peak Season can be attributed to valentine's Day and winter events in the month of **February** and summer vacation, warm weather and festivals in **June** & **July**. While, the decrease in bookings across all boroughs could be due to a combination of factors, including the pandemic, changes in Airbnb's policies, and increased competition from other short-term rental platforms.
+
+
+
+# 3. Walkability Index
+
+## Hypothesis
+Walkability significantly influences Airbnb pricing in New York City.
+
+---
+
+## Predictions
+
+1. **Higher Walkability, Higher Prices**: Listings in highly walkable neighborhoods are expected to have higher nightly rates due to convenience and urban amenities.
+
+2. **Consumer Preference**: Travelers likely prefer walkable areas, linking walkability to booking rates and price tolerance.
+
+---
+
+## Objective
+
+1. **Data Analysis**: Analyze Airbnb listings (price, location) alongside walkability scores.
+
+2. **Correlation Assessment**: Use statistical methods to evaluate the relationship between walkability and pricing.
+
+3. **Implications**:
+   - **For Hosts**: Optimize pricing using walkability insights.
+   - **For Travelers**: Understand walkability's impact on accommodation choices and budgets in NYC.
+
+
+## Libraries
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Show the code"
+library(dplyr)       # Data manipulation
+library(sf)          # Handling spatial data
+library(geosphere)   # Geospatial calculations
+library(httr)        # HTTP requests
+library(tigris)      # Census and geographic data
+library(ggplot2)     # Visualization
+library(leaflet)     # Interactive mapping
+library(gt)          # Table formatting
+```
+
+## Data Sources
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Show the code"
+df_2019 <- read.csv("AB_NYC_2019.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+df_2023<- read.csv("NYC-Airbnb-2023.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+```
+
+Now we proceed to download the [Walkability Index](https://catalog.data.gov/dataset/walkability-index7) data from the EPA API.
+
+The documentation for the API can be found [here](https://geodata.epa.gov/arcgis/rest/services/OA/WalkabilityIndex/MapServer/0).
+The following code would help you download the data from the API.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| results: "hide"
+# Base API URL
+base_url <- "https://geodata.epa.gov/arcgis/rest/services/OA/WalkabilityIndex/MapServer/0/query"
+
+# Function to query data
+fetch_walkability_data <- function(fields, limit = 1000, state_code = NULL) {
+  offset <- 0
+  results <- list()
+  has_more <- TRUE
+  
+  while (has_more) {
+    # Construct query parameters
+    query <- list(
+      where = if (!is.null(state_code)) paste0("STATEFP = '", state_code, "'") else "1=1",
+      outFields = paste(fields, collapse = ","),
+      f = "geojson",
+      resultOffset = offset,
+      resultRecordCount = limit
+    )
+    
+    # Send GET request
+    response <- GET(base_url, query = query)
+    
+    # Parse response
+    if (status_code(response) != 200) stop("API query failed")
+    geojson_data <- content(response, "text", encoding = "UTF-8")
+    features <- st_read(geojson_data, quiet = TRUE)
+    
+    # Add to results
+    results <- append(results, list(features))
+    
+    # Pagination handling
+    if (nrow(features) < limit) {
+      has_more <- FALSE
+    } else {
+      offset <- offset + limit
+    }
+  }
+  
+  # Combine all data
+  combined_data <- do.call(rbind, results)
+  return(combined_data)
+}
+
+# Specify the fields to extract
+fields <- c("NatWalkInd", "GEOID20")
+
+# Fetch data for New York (State FIPS Code 36)
+walkability <- fetch_walkability_data(fields, state_code = "36")
+
+# Suppress output from st_write
+invisible(capture.output(
+  st_write(walkability, "NY_Walkability_Index.geojson", delete_dsn = TRUE)
+))
+```
+
+
+## Combining the Datasets
+
+Now that we have the necessary data sets, we can proceed to combine them for further analysis. We will first clean and process the data before merging them based on the geographical information.
+
+First we would combine, the airbnb data sets.
+
+
+## Cleaning and processing the Airbn Data sets
+
+```{r}
+# Combine Airbnb datasets
+airbnb_combined <- bind_rows(df_2019, df_2023)
+
+# Select only the necessary columns
+airbnb_cleaned <- airbnb_combined |>
+  select(neighbourhood_group, neighbourhood, latitude, longitude, room_type, price)
+
+# Filter rows to include only 'Entire home/apt' and 'Private room'
+airbnb_filtered <- airbnb_cleaned |>
+  filter(room_type %in% c("Private room"))
+```
+Our data set has the following columns:
+Rows: 89,893
+Columns: 6
+
+## Adding Spatial Features to Airbnb Data
+
+To incorporate geographic context into the Airbnb dataset, we:
+
+1. **Download Census Block Groups (CBGs):** Use the `tigris` package to get New York State CBGs.
+2. **Perform a Spatial Join:** Map Airbnb latitude/longitude points to their corresponding CBGs.
+3. **Add `GEOID`:** Assign each Airbnb entry a `GEOID`, aligning with the Walkability Index's `GEOID20` for seamless merging.
+
+This enhances the Airbnb dataset with geographic information for further analysis. 
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| results: "hide"
+
+# Download Census Block Groups for New York State
+ny_block_groups <- block_groups(state = "NY", year = 2020, cb = TRUE)
+
+# Check if CRS is undefined
+if (is.na(st_crs(ny_block_groups))) {
+  stop("CRS for ny_block_groups is undefined. Define it before proceeding.")
+}
+
+# Assign WGS84 CRS to airbnb_filtered if it uses lat/lon
+if (is.na(st_crs(airbnb_filtered))) {
+  airbnb_sf <- st_as_sf(airbnb_filtered, coords = c("longitude", "latitude"), crs = 4326)
+} else {
+  airbnb_sf <- st_as_sf(airbnb_filtered, coords = c("longitude", "latitude"))
+}
+
+# Transform CRS of airbnb_sf to match ny_block_groups if necessary
+if (!st_crs(airbnb_sf)$epsg == st_crs(ny_block_groups)$epsg) {
+  airbnb_sf <- st_transform(airbnb_sf, crs = st_crs(ny_block_groups))
+}
+
+# Perform spatial join to associate attributes
+airbnb_with_block <- st_join(airbnb_sf, ny_block_groups, join = st_within)
+
+# Replace point geometries with the corresponding block group geometries
+airbnb_with_block$geometry <- ny_block_groups$geometry[match(
+  airbnb_with_block$GEOID, ny_block_groups$GEOID
+)]
+
+#Now we proceed to merge the walkability index data with the airbnb data set.
+
+# Step 1: Remove `sf` class from walkability
+walkability_no_sf <- st_drop_geometry(walkability)
+
+# Step 2: Perform attribute join
+airbnb_with_walkability <- airbnb_with_block |>
+  left_join(walkability_no_sf, by = c("GEOID" = "GEOID20"))
+
+```
+## Cleaning the Dataset and Handling Missing Values
+
+Now that we have combined the datasets, we need to clean the data and handle any missing values before proceeding with the analysis.We also need to eliminate the outliers from the dataset to have a better visualization of the data.
+
+After elimitating the outliers, we have the following visual.
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+# Step 3: Select and clean necessary columns
+airbnb_cleaned <- airbnb_with_walkability |>
+  select(neighbourhood_group, neighbourhood, room_type, price, GEOID, NatWalkInd) |> # Select relevant columns
+  filter(!is.na(price) & !is.na(NatWalkInd))  # Remove rows with missing price or walkability index
+
+
+#Outliers
+# Define the IQR-based outlier threshold function
+outlier_threshold <- function(x) {
+  Q1 <- quantile(x, 0.25, na.rm = TRUE)
+  Q3 <- quantile(x, 0.75, na.rm = TRUE)
+  IQR <- Q3 - Q1
+  lower <- Q1 - 1.5 * IQR
+  upper <- Q3 + 1.5 * IQR
+  return(list(lower = lower, upper = upper))
+}
+
+# Apply the function to identify outlier thresholds
+thresholds <- outlier_threshold(airbnb_cleaned$price)
+
+# Add a column identifying outliers
+airbnb_cleaned <- airbnb_cleaned |>
+  mutate(
+    is_outlier = price < thresholds$lower | price > thresholds$upper
+  )
+
+# Count the number of outliers
+num_outliers <- sum(airbnb_cleaned$is_outlier, na.rm = TRUE)
+
+# Remove outliers
+airbnb_cleaned_no_outliers <- airbnb_cleaned |>
+  filter(!is_outlier)
+
+# Enhanced histogram with removed outliers annotation
+ggplot(airbnb_cleaned, aes(x = price, fill = is_outlier)) +
+  geom_histogram(binwidth = 10, color = "black", alpha = 0.7, position = "identity") +
+  scale_fill_manual(values = c("FALSE" = "gray", "TRUE" = "red")) +
+  labs(
+    title = "Airbnb Price Distribution with Outliers Highlighted",
+    x = "Price",
+    y = "Count",
+    fill = "Outlier"
+  ) +
+  theme_minimal() +
+  xlim(0, quantile(airbnb_cleaned$price, 0.99, na.rm = TRUE)) +  # Optional: Limit x-axis
+  annotate(
+    "text",
+    x = quantile(airbnb_cleaned$price, 0.75, na.rm = TRUE),  # Position annotation
+    y = max(table(cut(airbnb_cleaned$price, seq(0, max(airbnb_cleaned$price, na.rm = TRUE), 10)))),
+    label = paste(num_outliers, "Outliers Removed"),
+    color = "red",
+    size = 5,
+    hjust = 0
+  )
+```
+
+## Average Price by Census Block Group
+
+We will calculate the average price of private rooms by Census Block Group (CBG) to visualize the distribution of Airbnb prices across different neighborhoods in New York City.
+Each CBG will be represented by its average price and Walkability Index.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| results: "hide"
+# Load NYC boundary shape (GeoJSON from NYC OpenData)
+nyc_boundary <- st_read("https://data.cityofnewyork.us/resource/7t3b-ywvw.geojson")
+
+ny_block_groups <- st_transform(ny_block_groups, crs = 4326)
+
+# Step 1: Group and summarize data for private rooms
+private_room_avg_price <- airbnb_cleaned_no_outliers |>
+  filter(room_type == "Private room") |>  # Filter for private rooms
+  st_set_geometry(NULL) |>                # Temporarily remove geometry
+  group_by(GEOID, neighbourhood_group, neighbourhood) |>  # Group by GEOID and neighborhoods
+  summarize(
+    avg_price = mean(price, na.rm = TRUE),       # Calculate average price
+    avg_NatWalkInd = mean(NatWalkInd, na.rm = TRUE)  # Calculate average walkability index
+  )
+
+# Join the average price back to the original spatial dataset
+ny_block_groups_with_price <- ny_block_groups |>
+  left_join(private_room_avg_price, by = c("GEOID" = "GEOID"))
+```
+
+
+## Visualizing the Average Price Distribution
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| 
+# Create a color palette for the heatmap
+pal <- colorNumeric(
+  palette = "YlOrRd",  # Choose a heatmap color palette
+  domain = ny_block_groups_with_price$avg_price,  # Domain of average prices
+  na.color = "transparent"  # Handle missing values
+)
+
+# Create the Leaflet map with a heatmap-like color gradient
+leaflet(data = ny_block_groups_with_price) |>
+  addTiles() |>  # Add default OpenStreetMap tiles
+  addPolygons(
+    fillColor = ~pal(avg_price),  # Use color palette for the fill color
+    color = "black",              # Border color
+    weight = 1,                   # Border weight
+    fillOpacity = 0.7,            # Transparency for the fill
+    popup = ~paste0(
+      "GEOID: ", GEOID, "<br>",
+      "Average Price: $", round(avg_price, 2)
+    )
+  ) |>
+  addLegend(
+    pal = pal, values = ny_block_groups_with_price$avg_price,
+    position = "bottomright",
+    title = "Average Price",
+    opacity = 1
+  ) |>
+  setView(lng = -73.935242, lat = 40.730610, zoom = 12)  # Center on NYC
+
+```
+
+## Walkabilty index Visualization
+
+Now we would create a heatmap to visualize the Walkability Index across different neighborhoods in New York City.
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+
+# Create a color palette for the heatmap
+pal <- colorNumeric(
+  palette = "Greens",  # Green color palette
+  domain = ny_block_groups_with_price$avg_NatWalkInd,  # Domain of average prices
+  na.color = "transparent"  # Handle missing values
+)
+# Create the Leaflet map with a heatmap-like color gradient
+leaflet(data = ny_block_groups_with_price) |>
+  addTiles() |>  # Add default OpenStreetMap tiles
+  addPolygons(
+    fillColor = ~pal(avg_NatWalkInd),  # Use color palette for the fill color
+    color = "black",              # Border color
+    weight = 1,                   # Border weight
+    fillOpacity = 0.7,            # Transparency for the fill
+    popup = ~paste0(
+      "GEOID: ", GEOID, "<br>",
+      "Walkability Index", round(avg_NatWalkInd, 2)
+    )
+  ) |>
+  addLegend(
+    pal = pal, values = ny_block_groups_with_price$avg_NatWalkInd,
+    position = "bottomright",
+    title = "Walkability Index",
+    opacity = 1
+  ) |>
+  setView(lng = -73.935242, lat = 40.730610, zoom = 12)  # Center on NYC
+
+
+```
+
+After visualizing the data, we can proceed to the linear regression analysis to determine the relationship between walkability and Airbnb pricing.
+
+## Linear Regression Analysis
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+# Fit a linear regression model with only walkability
+model_walkability <- lm(avg_price ~ avg_NatWalkInd, data = private_room_avg_price)
+
+# Extract model summary
+summary_output <- summary(model_walkability)
+
+# Extract coefficients and relevant values
+coefficients <- summary_output$coefficients
+coefficients_df <- data.frame(
+  Predictor = rownames(coefficients),
+  Coefficient = coefficients[, "Estimate"],
+  PValue = coefficients[, "Pr(>|t|)"]
+)
+
+# Add R-squared and adjusted R-squared as additional rows
+coefficients_df <- rbind(
+  coefficients_df,
+  data.frame(Predictor = "R-Squared", Coefficient = summary_output$r.squared, PValue = NA)
+  )
+# Update the label for walkability in the Predictor column
+coefficients_df$Predictor <- gsub("avg_NatWalkInd", "Walkability Index", coefficients_df$Predictor)
+
+# Create a summary table using gt
+summary_table <- gt(coefficients_df) |>
+  gt::tab_header(
+    title = "Walkability Model Summary"
+  ) |>
+  gt::cols_label(
+    Predictor = "Predictor",
+    Coefficient = "Coefficient",
+    PValue = "P-Value"
+  ) |>
+  gt::fmt_number(
+    columns = c(Coefficient, PValue),
+    decimals = 3
+  ) |>
+  gt::cols_align(
+    align = "center",
+    columns = everything()
+  )
+
+# Print the table
+summary_table
+```
+
+## Walkability Model Summary
+
+This table summarizes a linear regression analysis of the relationship between the Walkability Index and Airbnb private room prices:
+
+## Key Findings
+
+1. **Intercept (67.775)**:
+   - Represents the expected average price when the Walkability Index is zero.
+   - Statistically significant (P = 0.000) but not practically relevant since Walkability Index values rarely reach zero.
+
+2. **Walkability Index (0.330)**:
+   - For each one-unit increase in the Walkability Index, the average price rises by $0.33.
+   - Statistically significant (P = 0.016) but with a small effect size.
+
+3. **R-Squared (0.001)**:
+   - Indicates only 0.1% of price variation is explained by the Walkability Index.
+   - Suggests the Walkability Index is a weak predictor, with other factors likely driving price variations.
+
+## Insights
+
+- While walkability has a statistically significant effect, its impact on Airbnb pricing is small.
+- Other factors, such as neighborhood features, amenities, and room size, are likely more influential.
+- Further analysis incorporating additional variables is recommended to better understand the determinants of Airbnb pricing.
 
 # 4. Length of stay effect on the listing price and reviews
 
