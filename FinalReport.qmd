@@ -6,9 +6,6 @@ format:
     theme: journal
     code-fold: true
 ---
-<center> 
-# <span style="color:#FF5A5F;">Analyzing Airbnb Market Trends for NYC</span>
-</center>
 
 <center> 
 ![ ](Airbnb-logo.png){width=70% height=70%}
