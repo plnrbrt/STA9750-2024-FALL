@@ -1,10 +1,9 @@
 ---
-title: "Final Report- Listing Legends: 
-Analyzing Airbnb Market Trends for NYC"
+title: "Final Report: Listing Legends"
 authors: "Pauline Robert, Cristel Zuniga, Juan Camilo Martínez, Cheick Diallo"
 format:
   html:
-    theme: Journal
+    theme: journal
     code-fold: true
 ---
 <center> 
@@ -13,6 +12,9 @@ format:
 
 <center> 
 ![ ](Airbnb-logo.png){width=70% height=70%}
+</center>
+<center> 
+# <span style="color:#FF5A5F;">Analyzing Airbnb Market Trends for NYC</span>
 </center>
 
 # Introduction
