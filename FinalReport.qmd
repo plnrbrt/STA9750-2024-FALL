@@ -1,0 +1,1251 @@
+---
+title: "Final Report- Listing Legends: 
+Analyzing Airbnb Market Trends for NYC"
+format:
+  html:
+    code-fold: true
+---
+
+<center> 
+![ ](Airbnb-logo.png){width=70% height=70%}
+</center>
+
+# Introduction
+
+The COVID-19 pandemic unexpectedly impacted the world, especially the hospitality and real estate industries. Short-term rental markets like Airbnb were notably affected. Our group chose this topic because many of us have used or will use Airbnb, and we wanted to understand how the pandemic influenced host and customer behavior, the relationship between room numbers, location, and prices, and how hosts can optimize these factors for profitability.
+
+## Research Question
+
+How do property characteristics (e.g., type of property, location, availability) or host reputation (e.g., reviews, amount of listings) influence Airbnb pricing in NYC, analyzing 2019 and 2023?
+
+## Specific Questions
+
+1.  How do rental prices vary by neighborhood in New York City?
+2.  What are the peak seasons for Airbnb bookings in NYC?
+3.  Does the walkability index of NYC affects the listing pricing?
+4.  How does the length of stay affect the overall reviews and price of a listing?
+
+We aim to explore how property characteristics and host reputation influence Airbnb pricing in NYC, comparing data from 2019 and 2023. Our research will address how rental prices vary by neighborhood, peak booking seasons, the impact of walkability on pricing, and how length of stay affects reviews and pricing. This will provide insights to help hosts optimize their listings and pricing strategies.
+
+## Data Sources
+
+-   **Data sets from Kaggle**:
+    -   [New York City Airbnb Open Data](https://www.kaggle.com/datasets/dgomonov/new-york-city-airbnb-open-data)
+    -   [New York City Airbnb 2023, Public Data](https://www.kaggle.com/datasets/godofoutcasts/new-york-city-airbnb-2023-public-data)
+-   **Data from StreetEasy**:
+    -   [Median Asking Rent per Borough in NYC](https://cdn-charts.streeteasy.com/rentals/All/medianAskingRent_All.zip?_ga=2.55931043.945781993.1730314388-725217219.1730314388)
+-   **Data set from the US Environment Protection Agency**:
+    -   [Walkability Index](https://catalog.data.gov/dataset/walkability-index7)
+-   **Article from Airbnb Newsroom**:
+    -   [NYC’s rules one year later: Higher prices for travelers, no housing impact](https://news.airbnb.com/nyc-rules-higher-prices-for-travelers-no-impact-on-housing/)
+-   **Article from The City Newsroom**:
+    -   [Can I Legally Stay in an NYC Airbnb? Here’s How the New Registration System Will Work](https://www.thecity.nyc/2023/08/15/how-new-airbnb-registration-system-works/)
+
+# 1. Effects of the Listing Location on Price
+
+To assess the influence of neighborhood location on Airbnb listing prices, we compared these prices to the median asking rents across NYC boroughs. Higher rents in certain neighborhoods may correlate with elevated nightly Airbnb rates, providing insight into the relationship between long-term rental costs and short-term rental pricing.
+
+The following visualizations showcase the average median asking rents across NYC boroughs for 2019 and 2023, based on data from [StreetEasy](https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://streeteasy.com/blog/data-dashboard/&ved=2ahUKEwjwjqCO0J6KAxXkl4kEHWuoHFAQFnoECBUQAQ&usg=AOvVaw1zdIm6ptJWPKsGgQN1weVB), alongside the average Airbnb listing prices by neighborhood for the same years. These comparisons highlight trends in both long-term rental costs and short-term accommodation pricing.
+
+## Average Median Asking Rent by Borough in 2019 in NYC
+
+```{r, echo=TRUE,warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+library(httr)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(plotly)
+
+# Function to safely download and extract the dataset
+safe_download_extract <- function(url, zip_file, extract_dir) {
+  tryCatch({
+    download.file(url, destfile = zip_file, mode = "wb")
+    if (file.exists(zip_file)) {
+      unzip(zip_file, exdir = extract_dir)
+      return(TRUE)
+    } else {
+      message("Failed to download the file.")
+      return(FALSE)
+    }
+  }, error = function(e) {
+    message("Error in downloading or extracting: ", e$message)
+    return(FALSE)
+  })
+}
+
+# Function to safely read CSV
+safe_read_csv <- function(file_path) {
+  tryCatch({
+    df <- read_csv(file_path)
+    if (nrow(df) > 0) {
+      return(df)
+    } else {
+      message("The CSV file is empty.")
+      return(NULL)
+    }
+  }, error = function(e) {
+    message("Error reading CSV: ", e$message)
+    return(NULL)
+  })
+}
+
+# Main execution
+url <- 'https://cdn-charts.streeteasy.com/rentals/All/medianAskingRent_All.zip?_ga=2.55931043.945781993.1730314388-725217219.1730314388'
+zip_file <- "medianAskingRent_All.zip"
+extract_dir <- "StreetEasyAskingRentData"
+data_file_path <- file.path(extract_dir, "medianAskingRent_All.csv")
+
+# Step 1: Download and extract
+if (!safe_download_extract(url, zip_file, extract_dir)) {
+  stop("Failed to download or extract the dataset.")
+}
+
+# Step 2: Load the data
+df <- safe_read_csv(data_file_path)
+if (is.null(df)) {
+  stop("Failed to read the CSV file.")
+}
+
+
+# Step 3: Prepare the Data
+# Select only the columns for 2019
+cols_2019 <- c("areaName", "Borough", "areaType", grep("^2019-", names(df), value = TRUE))
+df_2019 <- df[, cols_2019]
+
+# Melt the dataframe
+df_melted <- df_2019 %>%
+  pivot_longer(cols = starts_with("2019-"),
+               names_to = "YearMonth",
+               values_to = "MedianAskingRent")
+
+df_melted$YearMonth <- ym(df_melted$YearMonth)
+
+# Calculate average median rent per borough for 2019
+avg_median_rent_2019 <- df_melted %>%
+  group_by(Borough) %>%
+  summarize(MedianAskingRent = mean(MedianAskingRent, na.rm = TRUE))
+
+# Create a bar chart for 2019 with custom colors
+color_map <- c(
+  'Manhattan' = '#7FD4C1',
+  'Brooklyn' = '#30BFDD',
+  'Queens' = '#8690FF',
+  'Bronx' = '#ACD0F4',
+  'Staten Island' = '#F7C0BB'
+)
+
+fig_ST_2019 <- plot_ly(avg_median_rent_2019, x = ~Borough, y = ~MedianAskingRent, type = 'bar',
+               color = ~Borough, colors = color_map) %>%
+  layout(title = 'Average Median Asking Rent by Borough in 2019 in NYC<br><sup>Data from StreetEasy</sup>',
+         xaxis = list(title = 'Borough'),
+         yaxis = list(title = 'Average Median Asking Rent'),
+         plot_bgcolor = 'white',
+         paper_bgcolor = 'white',
+         width = 600,
+         height = 600)
+
+# Show the plot
+fig_ST_2019
+
+```
+
+## Average Median Asking Rent by Borough in 2023 in NYC
+
+```{r, echo=TRUE,warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+library(httr)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(plotly)
+
+# Function to safely download and extract the dataset
+safe_download_extract <- function(url, zip_file, extract_dir) {
+  tryCatch({
+    download.file(url, destfile = zip_file, mode = "wb")
+    if (file.exists(zip_file)) {
+      unzip(zip_file, exdir = extract_dir)
+      return(TRUE)
+    } else {
+      message("Failed to download the file.")
+      return(FALSE)
+    }
+  }, error = function(e) {
+    message("Error in downloading or extracting: ", e$message)
+    return(FALSE)
+  })
+}
+
+# Function to safely read CSV
+safe_read_csv <- function(file_path) {
+  tryCatch({
+    df <- read_csv(file_path)
+    if (nrow(df) > 0) {
+      return(df)
+    } else {
+      message("The CSV file is empty.")
+      return(NULL)
+    }
+  }, error = function(e) {
+    message("Error reading CSV: ", e$message)
+    return(NULL)
+  })
+}
+
+# Main execution
+url <- 'https://cdn-charts.streeteasy.com/rentals/All/medianAskingRent_All.zip?_ga=2.55931043.945781993.1730314388-725217219.1730314388'
+zip_file <- "medianAskingRent_All.zip"
+extract_dir <- "StreetEasyAskingRentData"
+data_file_path <- file.path(extract_dir, "medianAskingRent_All.csv")
+
+# Step 1: Download and extract
+if (!safe_download_extract(url, zip_file, extract_dir)) {
+  stop("Failed to download or extract the dataset.")
+}
+
+# Step 2: Load the data
+df <- safe_read_csv(data_file_path)
+if (is.null(df)) {
+  stop("Failed to read the CSV file.")
+}
+
+
+# Step 3: Prepare the Data
+# Select only the columns for 2023
+cols_2023 <- c("areaName", "Borough", "areaType", grep("^2023-", names(df), value = TRUE))
+df_2023 <- df[, cols_2023]
+
+# Melt the dataframe
+df_melted <- df_2023 %>%
+  pivot_longer(cols = starts_with("2023-"),
+               names_to = "YearMonth",
+               values_to = "MedianAskingRent")
+
+df_melted$YearMonth <- ym(df_melted$YearMonth)
+
+# Calculate average median rent per borough for 2023
+avg_median_rent_2023 <- df_melted %>%
+  group_by(Borough) %>%
+  summarize(MedianAskingRent = mean(MedianAskingRent, na.rm = TRUE))
+
+# Create a bar chart for 2023 with custom colors
+color_map <- c(
+  'Manhattan' = '#7FD4C1',
+  'Brooklyn' = '#30BFDD',
+  'Queens' = '#8690FF',
+  'Bronx' = '#ACD0F4',
+  'Staten Island' = '#F7C0BB'
+)
+
+fig_ST_2023 <- plot_ly(avg_median_rent_2023, x = ~Borough, y = ~MedianAskingRent, type = 'bar',
+               color = ~Borough, colors = color_map) %>%
+  layout(title = 'Average Median Asking Rent by Borough in 2023 in NYC<br><sup>Data from StreetEasy</sup>',
+         xaxis = list(title = 'Borough'),
+         yaxis = list(title = 'Average Median Asking Rent'),
+         plot_bgcolor = 'white',
+         paper_bgcolor = 'white',
+         width = 600,
+         height = 600)
+
+# Show the plot
+fig_ST_2023
+
+```
+
+```{r, echo=TRUE,warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+library(readr)
+library(dplyr)
+library(plotly)
+
+# Step 1: Load the datasets
+df_2019 <- read_csv('AB_NYC_2019.csv')
+df_2023 <- read_csv('NYC-Airbnb-2023.csv')
+
+# Step 2: Replace outliers in the 'price' column with the mean
+replace_outliers_with_mean <- function(df, column, lower_quantile = 0.05, upper_quantile = 0.95) {
+  lower_bound <- quantile(df[[column]], lower_quantile)
+  upper_bound <- quantile(df[[column]], upper_quantile)
+  mean_value <- mean(df[[column]][df[[column]] >= lower_bound & df[[column]] <= upper_bound])
+  df[[column]] <- ifelse(df[[column]] < lower_bound | df[[column]] > upper_bound, mean_value, df[[column]])
+  return(df)
+}
+
+df_2019_clean <- replace_outliers_with_mean(df_2019, 'price')
+df_2023_clean <- replace_outliers_with_mean(df_2023, 'price')
+
+# Step 3: Calculate average price per neighborhood_group
+avg_price_2019 <- df_2019_clean %>%
+  group_by(neighbourhood_group) %>%
+  summarize(price = mean(price))
+
+avg_price_2023 <- df_2023_clean %>%
+  group_by(neighbourhood_group) %>%
+  summarize(price = mean(price))
+
+# Step 4: Create bar charts for 2019 and 2023
+color_map <- c(
+  'Manhattan' = '#7FD4C1',
+  'Brooklyn' = '#30BFDD',
+  'Queens' = '#8690FF',
+  'Bronx' = '#ACD0F4',
+  'Staten Island' = '#F7C0BB'
+)
+
+fig_2019 <- plot_ly(avg_price_2019, x = ~neighbourhood_group, y = ~price, type = 'bar',
+                    color = ~neighbourhood_group, colors = color_map) %>%
+  layout(title = 'Average Airbnb Price by Neighborhood Group in NYC (2019)<br><sup>Data from Airbnb</sup>',
+         xaxis = list(title = 'Neighborhood Group'),
+         yaxis = list(title = 'Average Price ($)'),
+         plot_bgcolor = 'white',
+         paper_bgcolor = 'white',
+         width = 600,
+         height = 600)
+
+fig_2023 <- plot_ly(avg_price_2023, x = ~neighbourhood_group, y = ~price, type = 'bar',
+                    color = ~neighbourhood_group, colors = color_map) %>%
+  layout(title = 'Average Airbnb Price by Neighborhood Group in NYC (2023)<br><sup>Data from Airbnb</sup>',
+         xaxis = list(title = 'Neighborhood Group'),
+         yaxis = list(title = 'Average Price ($)'),
+         plot_bgcolor = 'white',
+         paper_bgcolor = 'white',
+         width = 600,
+         height = 600)
+
+```
+
+## Average Airbnb Price by Neighborhood Group in NYC (2019)
+
+```{r, echo=TRUE, ,warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+fig_2019
+```
+
+## Average Airbnb Price by Neighborhood Group in NYC (2023)
+
+```{r, echo=TRUE, ,warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+fig_2023
+```
+
+In 2023, the average Airbnb listing prices across NYC's neighborhood groups reveal clear disparities. Manhattan recorded the highest average price, approximately \$160, followed by Brooklyn at \$140, Queens at \$120, Staten Island at \$100, and the Bronx at \$80, the lowest. This pattern suggests that neighborhoods with higher median asking rents, such as Manhattan and Brooklyn, also command higher Airbnb listing prices, indicating a strong correlation between the two metrics.
+
+Comparing this with 2019 data, a similar trend is observed. In 2019, Manhattan led with an average Airbnb price of \$140, followed by Brooklyn at \$120, Queens at \$100, Staten Island at \$80, and the Bronx at \$60. Both datasets highlight Manhattan and Brooklyn as consistently commanding the highest Airbnb prices, reflecting their premium status in both the short-term rental and long-term housing markets. From 2019 to 2023, Queens and Staten Island experienced slight increases in Airbnb prices, aligning with rising median asking rents, while the Bronx, despite remaining the most affordable, showed a modest upward trend in prices.
+
+The analysis of median asking rents further substantiates these observations. In 2019, Manhattan had the highest median asking rent at approximately \$3,500, followed by Brooklyn at \$3,000, with other boroughs trailing significantly. By 2023, Manhattan’s median asking rent had surged to \$4,500, while Brooklyn’s increased to \$3,500, indicating a notable rise in rental costs in these boroughs. These increases were less pronounced in other areas, emphasizing the growing disparity in housing costs.
+
+Overall, the data supports the hypothesis that a neighborhood’s location significantly influences Airbnb prices. Manhattan and Brooklyn consistently show higher values, underscoring their premium status in the city's real estate market. Over the four-year period, there has been an overall increase in prices, with particularly sharp rises in Manhattan and Brooklyn, suggesting heightened demand or increasing costs of living in these areas.
+
+# 2. Airbnb Peak Seasons in NYC 2019 & 2023
+
+```{r setup, include=FALSE}
+#| echo: true
+#| warning: false
+#| message: false
+#| code-fold: true
+#| code-summary: "View the code here"
+
+# Set CRAN mirror
+options(repos = c(CRAN = "https://cran.rstudio.com/"))
+
+# Install necessary packages
+
+library(tigris)
+library(sf)
+library(ggplot2)
+library(dplyr)
+library(viridis)
+library(ggspatial)
+library(tidyverse)
+library(jsonlite)
+library(readr)
+
+
+```
+
+## Load the Airbnb Data set
+
+```{r, echo=FALSE}
+#| echo: true
+#| warning: false
+#| message: false
+#| code-fold: true
+#| code-summary: "View the code here"
+
+airbnb_2019 <- read_csv("AB_NYC_2019.csv")
+airbnb_2023 <- read_csv("NYC-Airbnb-2023.csv")
+
+
+```
+
+Since the data set does not have a direct date column for **Booking**, we used the **last_review** column as a proxy to analyze the activity over time.
+
+## Let's now identify the Peak Seasons in 2019 and 2023
+
+```{r, echo=FALSE}
+#| echo: true
+#| warning: false
+#| message: false
+#| code-fold: true
+#| code-summary: "View the code here"
+
+airbnb_2019$last_review <- as.Date(airbnb_2019$last_review, format = "%Y-%m-%d")
+airbnb_2023$last_review <- as.Date(airbnb_2023$last_review, format = "%Y-%m-%d")
+
+# Extract month and year
+airbnb_2019$month <- format(airbnb_2019$last_review, "%Y-%m")
+airbnb_2023$month <- format(airbnb_2023$last_review, "%Y-%m")
+
+# Filter data to only include months in the respective years
+airbnb_2019_filtered <- airbnb_2019 %>% filter(format(last_review, "%Y") == "2019")
+airbnb_2023_filtered <- airbnb_2023 %>% filter(format(last_review, "%Y") == "2023")
+
+# Create a sequence of all months in each year
+all_months_2019 <- seq(as.Date("2019-01-01"), as.Date("2019-12-01"), by = "month")
+all_months_2023 <- seq(as.Date("2023-01-01"), as.Date("2023-12-01"), by = "month")
+
+# Convert to character format for plotting
+all_months_2019 <- format(all_months_2019, "%Y-%m")
+all_months_2023 <- format(all_months_2023, "%Y-%m")
+
+# Plotting the data
+ggplot(airbnb_2019_filtered, aes(x = factor(month, levels = all_months_2019))) +
+  geom_bar() +
+  labs(title = "Monthly Reviews in 2019", x = "Month", y = "Number of Reviews") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(airbnb_2023_filtered, aes(x = factor(month, levels = all_months_2023))) +
+  geom_bar() +
+  labs(title = "Monthly Reviews in 2023", x = "Month", y = "Number of Reviews") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+The two graphs show the number of reviews for Airbnb in New York City (NYC) in 2019 and 2023. The peak season for **Airbnb in NYC in 2019** was in June and July, with the highest number of reviews in June. There was a significant drop in reviews from June to July. The lowest number of reviews was in January and February. On the other hand, the peak season in **2023** was in February, with the highest number of reviews. There was a significant drop in reviews from February to March. The lowest number of reviews was in January. Overall, there seems to be a shift in the peak season from **June-July** in **2019** to **February** in **2023** and the number of reviews in **2023** is significantly lower than in **2019**.
+
+Another perspective would be to look at the number of reviews/bookings for all property types.
+
+```{r, echo=FALSE}
+#| echo: true
+#| warning: false
+#| message: false
+#| code-fold: true
+#| code-summary: "View the code here"
+
+
+# Combine the data by property type
+combined_data <- bind_rows(
+  airbnb_2019_filtered %>% mutate(year = 2019),
+  airbnb_2023_filtered %>% mutate(year = 2023)
+)
+
+# Create a sequence of all months in each year
+all_months_2019 <- format(seq(as.Date("2019-01-01"), as.Date("2019-12-01"), by = "month"), "%Y-%m")
+all_months_2023 <- format(seq(as.Date("2023-01-01"), as.Date("2023-12-01"), by = "month"), "%Y-%m")
+
+# Define custom colors for each property type
+custom_colors <- c(
+  "Private room" = "#1f77b4",
+  "Entire home/apt" = "#ff7f0e",
+  "Shared room" = "#2ca02c"
+)
+
+# Calculate the counts of reviews for each month and property type
+counts <- combined_data %>%
+  group_by(month, room_type) %>%
+  summarise(count = n()) %>%
+  ungroup()
+
+# Merge counts with combined data
+combined_data <- combined_data %>%
+  left_join(counts, by = c("month", "room_type"))
+
+ggplot(combined_data, aes(x = factor(month, levels = c(all_months_2019, all_months_2023)), fill = room_type)) +
+  geom_bar(position = "dodge", stat = "count") +
+  geom_text(aes(y = ..count.., label = ..count..), stat = "count", position = position_dodge(width = 1), vjust = -0.5, size = 1.5) +
+  facet_wrap(~ room_type, scales = "free_y") +
+  labs(title = "Monthly Reviews by Property Type", x = "Months", y = "Number of Reviews") +
+  theme_minimal(base_size = 10) +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 9),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA)
+  ) +
+  scale_fill_manual(values = custom_colors)
+
+
+```
+
+**Property Type Breakdown:**
+
+-   The most popular property type in both years in " Entire home / Apt "
+
+-   The least popular property type in both years is " Shared room / Hotel room "
+
+-   The peak season in 2023 was in February, with the highest number of reviews.
+
+Finally, I created two maps, one for 2019 and one for 2023, showing the number of Airbnb reviews/"bookings" by borough in NYC.
+
+```{r, echo=FALSE}
+#| echo: true
+#| warning: false
+#| message: false
+#| code-fold: true
+#| code-summary: "View the code here"
+
+borough_counts <- combined_data %>%
+  group_by(neighbourhood_group, year) %>%
+  summarise(count = n()) %>%
+  ungroup()
+nyc_boroughs <- counties(state = "NY", cb = TRUE, progress_bar = FALSE) %>%
+  filter(NAME %in% c("New York", "Kings", "Queens", "Bronx", "Richmond")) %>%
+  mutate(neighbourhood_group = case_when(
+    NAME == "New York" ~ "Manhattan",
+    NAME == "Kings" ~ "Brooklyn",
+    NAME == "Queens" ~ "Queens",
+    NAME == "Bronx" ~ "Bronx",
+    NAME == "Richmond" ~ "Staten Island"
+  ))
+
+
+nyc_boroughs_counts_2019 <- nyc_boroughs %>%
+  left_join(borough_counts %>% filter(year == 2019), by = "neighbourhood_group")
+nyc_boroughs_counts_2023 <- nyc_boroughs %>%
+  left_join(borough_counts %>% filter(year == 2023), by = "neighbourhood_group")
+
+ggplot() +
+  geom_sf(data = nyc_boroughs_counts_2019, aes(fill = count), color = "black") +
+  scale_fill_viridis_c(option = "C") +
+  labs(title = "Airbnb Reviews by Borough in NYC (2019)", fill = "Reviews") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  ggspatial::annotation_scale(location = "bl") +
+  ggspatial::annotation_north_arrow(location = "tl", which_north = "true", style = ggspatial::north_arrow_fancy_orienteering())
+
+ggplot() +
+  geom_sf(data = nyc_boroughs_counts_2023, aes(fill = count), color = "black") +
+  scale_fill_viridis_c(option = "C") +
+  labs(title = "Airbnb Reviews by Borough in NYC (2023)", fill = "Reviews") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  ggspatial::annotation_scale(location = "bl") +
+  ggspatial::annotation_north_arrow(location = "tl", which_north = "true", style = ggspatial::north_arrow_fancy_orienteering())
+
+```
+
+The maps above shows the distribution of Airbnb reviews/bookings across different boroughs in New York City (NYC) in 2019 and 2023. There appears to be a shift in the areas with the highest concentration of reviews. In 2019, Manhattan and parts of Brooklyn had the most intense activity. By 2023, the concentration seems to have shifted slightly, with some areas in Brooklyn and Queens showing higher relative activity.
+
+In conclusion, the Peak Season can be attributed to valentine's Day and winter events in the month of **February** and summer vacation, warm weather and festivals in **June** & **July**. While, the decrease in bookings across all boroughs could be due to a combination of factors, including the pandemic, changes in Airbnb's policies, and increased competition from other short-term rental platforms.
+
+# 4. Length of stay effect on the listing price and reviews
+
+<details>
+
+## Installing libraries
+
+<details>
+
+```{r}
+
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+library(dplyr)
+library(tidyr)
+library(caret)
+library(ggplot2)
+
+
+```
+
+</details>
+
+## Downloading NYC databases for 2019 and 2023.
+
+<details>
+
+<summary>Initial code to download the databases</summary>
+
+```{r}
+df_2019 <- read.csv("AB_NYC_2019.csv")
+df_2023 <- read.csv("NYC-Airbnb-2023.csv")
+
+```
+
+</details>
+
+## Cleaning and Pre processing
+
+<details>
+
+<summary>Handle missing values</summary>
+
+```{r}
+library(dplyr)
+
+df_2019 <- df_2019 %>%
+  mutate(
+    reviews_per_month = coalesce(reviews_per_month, 0),
+    last_review = coalesce(last_review, '0')  # Replace NA with a string '0'
+  )
+
+
+library(dplyr)
+
+df_2023 <- df_2023 %>%
+  mutate(
+    reviews_per_month = coalesce(reviews_per_month, 0),
+    last_review = coalesce(last_review, '0')  # Replace NA with a string '0'
+  )
+```
+
+<summary>Encoding Categorical Columns</summary>
+
+```{r, echo=TRUE, results='hide',warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+#2019 Database
+# Perform one-hot encoding without dropping any levels
+dummy <- dummyVars(~ room_type + neighbourhood_group, data = df_2019)
+# Apply the transformation
+df_ohe1 <- predict(dummy, newdata = df_2019)
+# Convert to a data frame
+df_ohe1 <- as.data.frame(df_ohe1)
+# Combine the encoded columns with the original data
+df2_2019 <- bind_cols(df_2019, df_ohe1)
+# Verify that all levels, including 'Bronx', are present
+colnames(df_ohe1)
+
+# Combine the original dataframe with the encoded columns
+df_2019 <- bind_cols(df_2019, df_ohe1)
+
+# Drop the unencoded columns ('room_type' and 'neighbourhood_group')
+df_2019 <- df_2019 %>%
+  select(-room_type, -neighbourhood_group)
+
+# View the first few rows of the updated dataframe
+head(df_2019)
+
+
+#2023 Database
+# Perform one-hot encoding without dropping any levels
+dummy2 <- dummyVars(~ room_type + neighbourhood_group, data = df_2023)
+# Apply the transformation
+df_ohe2 <- predict(dummy2, newdata = df_2023)
+# Convert to a data frame
+df_ohe2 <- as.data.frame(df_ohe2)
+# Combine the encoded columns with the original data
+df2_2023 <- bind_cols(df_2023, df_ohe2)
+# Verify that all levels, including 'Bronx', are present
+colnames(df_ohe2)
+
+# Combine the original dataframe with the encoded columns
+df_2023 <- bind_cols(df_2023, df_ohe2)
+
+# Drop the unencoded columns ('room_type' and 'neighbourhood_group')
+df_2023 <- df_2023 %>%
+  select(-room_type, -neighbourhood_group)
+
+# View the first few rows of the updated dataframe
+head(df_2023)
+
+
+
+
+
+```
+
+<summary>Removing outliers from the price and minimum_nights.</summary>
+
+```{r, echo=TRUE, results='hide',warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+#2019 Database
+# Define a function to remove outliers using the 3-sigma rule
+remove_outliers <- function(df, columns) {
+  for (col in columns) {
+    # Calculate the mean and standard deviation
+    mean_col <- mean(df[[col]], na.rm = TRUE)
+    std_col <- sd(df[[col]], na.rm = TRUE)
+    
+    # Define the upper and lower bounds
+    lower_bound <- mean_col - 3 * std_col
+    upper_bound <- mean_col + 3 * std_col
+    
+    # Filter the DataFrame to keep values within the bounds
+    df <- df %>% filter(df[[col]] >= lower_bound & df[[col]] <= upper_bound)
+  }
+  return(df)
+}
+
+# Specify the columns to clean
+columns_to_clean <- c('price', 'minimum_nights')
+
+# Apply the function to the dataset
+df_2019 <- remove_outliers(df2_2019, columns_to_clean)
+
+# Check the shape of the cleaned dataset (number of rows and columns)
+cat("Original dataset shape:", dim(df2_2019), "\n")
+cat("Cleaned dataset shape:", dim(df_2019), "\n")
+
+
+df_2019 <- df_2019 %>%
+  select(-room_type, -neighbourhood, -last_review, -latitude,-longitude,)
+
+# Optional: View the first few rows of the cleaned data
+#head(df_2019, 3)
+
+```
+
+```{r, echo=TRUE, results='hide',warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+#2023 Database
+
+# Define a function to remove outliers using the 3-sigma rule
+remove_outliers2 <- function(df, columns) {
+  for (col in columns) {
+    # Calculate the mean and standard deviation
+    mean_col <- mean(df[[col]], na.rm = TRUE)
+    std_col <- sd(df[[col]], na.rm = TRUE)
+    
+    # Define the upper and lower bounds
+    lower_bound <- mean_col - 3 * std_col
+    upper_bound <- mean_col + 3 * std_col
+    
+    # Filter the DataFrame to keep values within the bounds
+    df2 <- df %>% filter(df[[col]] >= lower_bound & df[[col]] <= upper_bound)
+  }
+  return(df2)
+}
+
+# Specify the columns to clean
+columns_to_clean2 <- c('price', 'minimum_nights')
+
+# Apply the function to the dataset
+df_2023 <- remove_outliers2(df2_2023, columns_to_clean2)
+
+# Check the shape of the cleaned dataset (number of rows and columns)
+cat("Original dataset shape:", dim(df2_2023), "\n")
+cat("Cleaned dataset shape:", dim(df_2023), "\n")
+
+df_2023 <- df_2023 %>%
+  select(-room_type, -neighbourhood, -last_review, -latitude,-longitude, -license, -number_of_reviews_ltm)
+
+```
+
+<summary>Renaming the columns</summary>
+
+```{r, echo=TRUE, results='hide',warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+
+# Rename columns
+df_2019 <- df_2019 %>%
+  rename(
+    `No. Listings/Host` = calculated_host_listings_count,
+    `Home/Apartment` = `room_typeEntire home/apt`,
+    `Private Room` = `room_typePrivate room`,
+    `Shared Room` = `room_typeShared room`,
+    Bronx = `neighbourhood_groupBronx`,
+    Brooklyn = `neighbourhood_groupBrooklyn`,
+    Manhattan = `neighbourhood_groupManhattan`,
+    Queens = `neighbourhood_groupQueens`,
+    `Staten Island` = `neighbourhood_groupStaten Island`,
+    `Airbnb Name` = name,
+    `Host ID` = host_id,
+    `Host Name` = host_name,
+    Price = price,
+    `Minimum Nights` = minimum_nights,
+    `No. Reviews` = number_of_reviews,
+    `Reviews/Month` = reviews_per_month,
+    `Availability 2019` = availability_365
+  )
+
+# View the first few rows to confirm the changes
+head(df_2019)
+
+```
+
+```{r}
+
+# Rename columns
+df_2023 <- df_2023 %>%
+  rename(
+    `No. Listings/Host` = calculated_host_listings_count,
+    `Hotel Room` = `room_typeHotel room`,
+    `Home/Apartment` = `room_typeEntire home/apt`,
+    `Private Room` = `room_typePrivate room`,
+    `Shared Room` = `room_typeShared room`,
+    Bronx = `neighbourhood_groupBronx`,
+    Brooklyn = `neighbourhood_groupBrooklyn`,
+    Manhattan = `neighbourhood_groupManhattan`,
+    Queens = `neighbourhood_groupQueens`,
+    `Staten Island` = `neighbourhood_groupStaten Island`,
+    `Airbnb Name` = name,
+    `Host ID` = host_id,
+    `Host Name` = host_name,
+    Price = price,
+    `Minimum Nights` = minimum_nights,
+    `No. Reviews` = number_of_reviews,
+    `Reviews/Month` = reviews_per_month,
+    `Availability 2023` = availability_365
+  )
+
+# View the first few rows to confirm the changes
+head(df_2023)
+```
+
+</details>
+
+### Define the target variable and features.
+
+<details>
+
+<summary>Code to see the target Variables</summary>
+
+```{r, echo=TRUE, results='hide',warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+#2019 database
+# Define the target variable
+y_2019 <- df_2019$Price
+
+# Define the feature set by selecting all columns except the specified ones
+X_2019 <- df_2019 %>%
+  select(-Price, -`Airbnb Name`, -`Host Name`)
+
+# Print the dimensions of the feature set and target variable
+cat("Feature set shape:", dim(X_2019), "\n")
+cat("Target shape:", length(y_2019), "\n")
+
+```
+
+```{r, echo=TRUE, results='hide',warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+
+
+#2023 database
+# Define the target variable
+y_2023 <- df_2023$Price
+
+# Define the feature set by selecting all columns except the specified ones
+X_2023 <- df_2023 %>%
+  select(-Price, -`Airbnb Name`, -`Host Name`)
+
+# Print the dimensions of the feature set and target variable
+cat("Feature set shape:", dim(X_2023), "\n")
+cat("Target shape:", length(y_2023), "\n")
+```
+
+</details>
+
+</details>
+
+## Most important Features impacting the Airbnb Prices in 2019 and 2023.
+
+#### 2019 Feature Importance
+
+![](Image1.jpeg)
+
+In 2019, price was mainly driven by room type, with Manhattan Airbnbs being the most popular, and homes and apartments were top choices.
+
+#### 2023 Feature Importance
+
+![](Image2.jpeg)
+
+In 2019, price was mainly driven by room type, with Manhattan Airbnbs being the most popular, and homes and apartments were top choices.
+
+By 2023, the number of reviews became a key price factor. Homes and apartments remained dominant, and Manhattan stayed popular, but reviews grew more important. This shift may be due to the 2020 pandemic, increasing demand for cleaner, safer spaces, and a 2023 law limiting short-term apartment rentals in NYC.
+
+## Analysis: **4. Length of stay effect on the listing price and reviews.**
+
+<details>
+
+```{r, echo=TRUE, results='hide',warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+
+# Assuming df_2019 and df_2023 are the two dataframes
+merged_df <- merge(df_2019, df_2023, by = "Host ID", all = FALSE)
+
+# Strip any leading/trailing spaces from column names
+colnames(merged_df) <- trimws(colnames(merged_df))
+
+# Rename columns in the merged dataframe
+colnames(merged_df) <- gsub("Home/Apartment_x", "Home/Apartment", colnames(merged_df))
+colnames(merged_df) <- gsub("Private Room_x", "Private Room", colnames(merged_df))
+colnames(merged_df) <- gsub("Shared Room_x", "Shared Room", colnames(merged_df))
+colnames(merged_df) <- gsub("Bronx_x", "Bronx", colnames(merged_df))
+colnames(merged_df) <- gsub("Brooklyn_x", "Brooklyn", colnames(merged_df))
+colnames(merged_df) <- gsub("Manhattan_x", "Manhattan", colnames(merged_df))
+colnames(merged_df) <- gsub("Queens_x", "Queens", colnames(merged_df))
+colnames(merged_df) <- gsub("Staten Island_x", "Staten Island", colnames(merged_df))
+
+# Display the updated column names
+print(colnames(merged_df))
+#head(merged_df)
+```
+
+```{r, echo=TRUE, results='hide',warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+
+# Compute the change in availability between 2023 and 2019
+merged_df$availability_change <- merged_df$`Availability 2023` - merged_df$`Availability 2019`
+
+# Display the first few rows to check the result
+head(merged_df)
+
+```
+
+</details>
+
+### Change comparation on the Number on minimum number of nights allowed in 2019 and 2023.
+
+<details>
+
+```{r}
+# Rename and extract relevant columns for 2019
+min_nights_2019 <- df_2019 %>%
+  select(`Host ID`, `Minimum Nights`) %>%
+  group_by(`Host ID`) %>%
+  summarize(`Min Nights 2019` = mean(`Minimum Nights`, na.rm = TRUE)) %>%
+  ungroup()
+
+# Rename and extract relevant columns for 2023
+min_nights_2023 <- df_2023 %>%
+  select(`Host ID`, `Minimum Nights`) %>%
+  group_by(`Host ID`) %>%
+  summarize(`Min Nights 2023` = mean(`Minimum Nights`, na.rm = TRUE)) %>%
+  ungroup()
+
+# Merge both datasets
+merged_min_nights <- merge(min_nights_2019, min_nights_2023, by = "Host ID", all = FALSE)
+
+# Calculate the difference
+merged_min_nights$`Min Nights Change` <- merged_min_nights$`Min Nights 2023` - merged_min_nights$`Min Nights 2019`
+
+# Analyze the results
+summary(merged_min_nights)
+
+```
+
+```{r}
+
+# Count the number of unique Host IDs
+unique_host_ids_count <- length(unique(merged_min_nights$`Host ID`))
+
+# Print the result
+cat(sprintf("Number of unique Host IDs: %d\n", unique_host_ids_count))
+
+```
+
+```{r}
+
+# Hosts with increased minimum nights
+increased_min_nights <- merged_min_nights[merged_min_nights$`Min Nights Change` > 0, ]
+#print(increased_min_nights)
+
+# Hosts with decreased minimum nights
+decreased_min_nights <- merged_min_nights[merged_min_nights$`Min Nights Change` < 0, ]
+#print(decreased_min_nights)
+
+```
+
+```{r}
+# Define bins for changes (10-day intervals)
+bins <- c(-Inf, seq(-120, 120, by = 10), Inf)
+
+# Define labels for bins
+labels <- c(
+  paste0(seq(-120, 110, by = 10), " to ", seq(-110, 120, by = 10)),
+  "> 120 days", "< -120 days"
+)
+
+# Create a new column with 10-day bins
+merged_min_nights$`Change Group` <- cut(
+  merged_min_nights$`Min Nights Change`,
+  breaks = bins,
+  labels = labels,
+  include.lowest = TRUE
+)
+
+# Display the first few rows to check
+head(merged_min_nights)
+
+```
+
+```{r}
+# Group by 'Change Group' and count
+grouped_changes <- merged_min_nights %>%
+  group_by(`Change Group`) %>%
+  summarise(Count = n()) %>%
+  arrange(`Change Group`)
+
+# Add a dummy column for a single-row heatmap
+grouped_changes <- grouped_changes %>%
+  mutate(Dummy = "Hosts")  # Create a dummy column for the x-axis
+
+# Plot the heatmap with counts displayed
+ggplot(data = grouped_changes, aes(x = Dummy, y = `Change Group`, fill = Count)) +
+  geom_tile(color = "black") +
+  geom_text(aes(label = Count), color = "white", size = 4) +  # Add labels
+  scale_fill_gradient(low = "pink", high = "purple", name = "Number of Hosts") +
+  labs(
+    title = "Heatmap of Minimum Nights Changes (2019 to 2023)",
+    x = "",
+    y = "Change Group (days)"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    plot.title = element_text(hjust = 0.5, size = 16)
+  )
+
+```
+
+</details>
+
+### Heatmap of Minimum Night Changes (2019 - 2023)
+
+Per the previous analysis, the variable "Minimum Nights" was one of the major factors in the price change in 2023. After reviewing our data, we found that the average minimum nights on Airbnb listings increased from 4.85 nights (2019) to 16.66 nights (2023). In the plot below, we can see that out of the 13,980 total listings found in both datasets, half of them increased their required minimum stay to between 30 and 40 days.
+
+![](Image3.jpeg)
+
+## Price Change Distribution of 2019 and 2023
+
+<details>
+
+```{r}
+# Drop duplicate Host IDs, keeping the first occurrence
+df_2019_unique <- df_2019 %>% distinct(`Host ID`, .keep_all = TRUE)
+df_2023_unique <- df_2023 %>% distinct(`Host ID`, .keep_all = TRUE)
+
+# Merge with the merged_min_nights dataframe
+merged_min_nights <- merged_min_nights %>%
+  left_join(select(df_2019_unique, `Host ID`, `Price`), by = "Host ID") %>%
+  rename(Price_2019 = Price) %>%
+  left_join(select(df_2023_unique, `Host ID`, `Price`), by = "Host ID") %>%
+  rename(Price_2023 = Price)
+
+# Calculate the price change
+merged_min_nights <- merged_min_nights %>%
+  mutate(
+    Price_Change = Price_2023 - Price_2019,
+    Price_Change_Percent = ((Price_2023 - Price_2019) / Price_2019) * 100
+  )
+
+# View the first few rows of the resulting dataframe
+head(merged_min_nights)
+
+```
+
+```{r}
+# Define bins for the percentage change (e.g., -100% to 100% in 10% increments)
+bins_percentage <- seq(-100, 100, by = 10)
+labels_percentage <- paste(bins_percentage[-length(bins_percentage)], "% to ", bins_percentage[-1] - 1, "%", sep = "")
+
+# Categorize into bins for price change
+merged_min_nights$Price_Change_Group <- cut(
+  merged_min_nights$Price_Change_Percent,
+  breaks = bins_percentage,
+  labels = labels_percentage,
+  include.lowest = TRUE
+)
+
+# Group by Price Change Group and count the number of listings
+price_change_grouped <- merged_min_nights %>%
+  count(Price_Change_Group) %>%
+  arrange(Price_Change_Group)
+
+# Plotting the price change distribution
+library(ggplot2)
+ggplot(price_change_grouped, aes(x = Price_Change_Group, y = n)) +
+  geom_bar(stat = "identity", fill = "purple", color = "black") +
+  geom_text(aes(label = n), vjust = -0.5, size = 3) +
+  labs(
+    title = "Price Change Distribution (2019 to 2023)",
+    x = "Price Change Group (%)",
+    y = "Number of Listings"
+  ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme_minimal() +
+  theme(panel.grid.major.y = element_line(color = "gray"))
+
+
+```
+
+</details>
+
+The goal of this analysis is to review the change in behavior in comparison with the change in minimum nights. As we can observe, 41.77% of listings registered in 2019 and 2023 maintained almost the same price. According to previous research, the new Law 18 affected many owners monetarily, as the length of stay increased. Fewer tourists can afford a long stay, which led owners to offer slight discounts or promotions to keep their business running.
+
+![](Image4.jpeg){width="850"}
+
+<https://www.thecity.nyc/2023/08/15/how-new-airbnb-registration-system-works/>
+
+## Top 20 Listings with the larger Minimum Night Change from 2019 to 2023
+
+<details>
+
+```{r}
+# Get the top 20 listings with the highest increase in minimum nights
+top_50_min_nights_increase <- merged_min_nights %>%
+  arrange(desc(`Min Nights Change`)) %>%
+  head(20)
+
+# View the top 15 listings
+head(top_50_min_nights_increase, 15)
+
+
+```
+
+```{r}
+
+# Load required libraries
+library(ggplot2)
+
+# Create a scatter plot to visualize the relationship between Minimum Nights Change and Price Change
+ggplot(top_50_min_nights_increase, aes(x = `Min Nights Change`, y = `Price_Change`, color = `Price_Change`, size = `Price_Change`)) +
+  geom_point() +
+  scale_size_continuous(range = c(3, 10)) +  # Adjust the size range for better visibility
+  scale_color_gradientn(colors = c("blue", "red")) +  # Coolwarm color palette approximation
+  labs(
+    title = "Relationship Between Minimum Nights Change and Price Change",
+    x = "Change in Minimum Nights",
+    y = "Price Change (Monetary)",
+    color = "Price Change (%)",
+    size = "Price Change (%)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "top")  # Adjust legend position
+
+
+```
+
+</details>
+
+![](Image5.jpeg)
+
+In this analysis, we selected the top 20 listings with the greatest increase in length of stay. As expected, most of the listings show a \$0 change or a decrease in price.
+
+## No. Reviews and Reviews per Month Change from 2019 to 2023
+
+<details>
+
+```{r}
+# Ensure necessary libraries are loaded
+library(dplyr)
+
+# Remove duplicates by Host ID in both 2019 and 2023 data frames
+df_2019_unique <- df_2019 %>% distinct(`Host ID`, .keep_all = TRUE)
+df_2023_unique <- df_2023 %>% distinct(`Host ID`, .keep_all = TRUE)
+
+# Add 'No. Reviews' and 'Reviews/Month' from df_2019 and df_2023 into merged_min_nights
+merged_min_nights <- merged_min_nights %>%
+  left_join(df_2019_unique %>%
+              select(`Host ID`, `No. Reviews`, `Reviews/Month`) %>%
+              rename(`No. Reviews 2019` = `No. Reviews`, 
+                     `Reviews/Month 2019` = `Reviews/Month`), 
+            by = "Host ID") %>%
+  left_join(df_2023_unique %>%
+              select(`Host ID`, `No. Reviews`, `Reviews/Month`) %>%
+              rename(`No. Reviews 2023` = `No. Reviews`, 
+                     `Reviews/Month 2023` = `Reviews/Month`), 
+            by = "Host ID")
+
+head(merged_min_nights)
+
+```
+
+```{r}
+# Calculate the change in No. Reviews and Reviews/Month between 2019 and 2023
+merged_min_nights['No. Reviews Change'] = merged_min_nights['No. Reviews 2023'] - merged_min_nights['No. Reviews 2019']
+merged_min_nights['Reviews/Month Change'] = merged_min_nights['Reviews/Month 2023'] - merged_min_nights['Reviews/Month 2019']
+
+# Optional: Calculate percentage change for No. Reviews and Reviews/Month
+merged_min_nights['No. Reviews Change (%)'] = ((merged_min_nights['No. Reviews 2023'] - merged_min_nights['No. Reviews 2019']) / merged_min_nights['No. Reviews 2019']) * 100
+merged_min_nights['Reviews/Month Change (%)'] = ((merged_min_nights['Reviews/Month 2023'] - merged_min_nights['Reviews/Month 2019']) / merged_min_nights['Reviews/Month 2019']) * 100
+
+# View the first few rows
+head(merged_min_nights)
+
+```
+
+```{r}
+# Create the scatter plot
+ggplot(merged_min_nights, aes(x = `Min Nights Change`, y = `No. Reviews Change`)) +
+  geom_point(color = "blue") +  # Plot points in blue
+  labs(
+    title = "Scatter Plot of Minimum Nights Change vs Reviews Change",
+    x = "Minimum Nights Change",
+    y = "Review Change"
+  ) +
+  theme_minimal()  # Use a minimal theme
+
+```
+
+</details>
+
+![](Image6.jpeg)
+
+Our third approach is to compare and analyze the relationship between Minimum Nights Change and the number of reviews change to determine if there is a significant correlation suggesting that changes in minimum nights directly affect the number of reviews per listing. Most data points are concentrated around zero on both axes, indicating that many listings experienced minimal or no change in either variable.
+
+## Correlation Price Change vs. No. Reviews & Minimum Nights Change
+
+<details>
+
+```{r}
+# Get the top 20 listings with the highest increase in minimum nights
+top_20_min_nights_increase <- merged_min_nights %>%
+  arrange(desc(`Min Nights Change`)) %>%
+  head(20)
+
+# View the top 3 of the top 20
+head(top_20_min_nights_increase, 3)
+
+```
+
+```{r, echo=TRUE, results='hide',warning=FALSE, message=FALSE, cache = TRUE, cache.lazy=FALSE,collapse=TRUE, fold=TRUE}
+# Ensure necessary libraries are loaded
+library(ggplot2)
+library(reshape2)
+
+# Calculate the correlation matrix
+correlation_matrix <- cor(merged_min_nights[, c('Min Nights Change', 'Price_Change', 'No. Reviews Change')])
+
+# Convert the correlation matrix to a long format for ggplot
+correlation_matrix_melted <- melt(correlation_matrix)
+
+# Plot the correlation matrix heatmap
+ggplot(correlation_matrix_melted, aes(Var1, Var2, fill = value)) +
+  geom_tile() +
+  geom_text(aes(label = sprintf("%.2f", value)), color = "white", size = 5) +  # Add correlation values to tiles
+  scale_fill_gradient2(low = "blue", high = "purple", mid = "orange", midpoint = 0) +
+  labs(title = "Correlation Between Minimum Nights Change, Price Change, and Reviews") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels
+
+```
+
+</details>
+
+In conclusion, the change in the length of stay has had a notable impact on rental prices, particularly in 2023. As previously discussed, 50% of the listings increased their minimum nights requirement; however, these listings did not significantly raise their prices. Instead, many owners opted to keep prices stable or slightly reduce them, despite broader economic factors such as inflation and increased tourism. This suggests a strategic decision by owners to adopt a "low price" approach to attract more customers, likely in response to new Airbnb regulations and heightened consumer sensitivity to environmental and social challenges.
+
+On the other hand, the change in the number of reviews showed only a slight increase in 2023 and did not appear to have a substantial impact on the minimum nights requirement. Ultimately, it is evident that price changes are more strongly influenced by adjustments in the Minimum Nights variable than by the number of reviews. This highlights the importance of length-of-stay policies as a key factor shaping Airbnb rental strategies in recent years.
+
+![](Image7.jpeg){width="680"}
+
+# Key Takeaways
+
+1.  **Neighborhood Influences Price**:\
+    Apartments in certain neighborhoods have higher asking rents, and this is reflected in Airbnb listing prices. Manhattan remains the primary driver of prices in 2023.
+
+2.  **Peak Seasons**:\
+    By analyzing monthly review counts, we can identify peak seasons for Airbnb bookings in each borough. Higher review counts in specific months indicate periods of increased demand, helping hosts optimize pricing and availability.
+
+3.  **Walkability Index**:\
+    The model suggests a slight correlation between higher walkability and higher Airbnb prices, although this factor alone does not fully explain pricing. Other variables likely have a greater impact.
+
+4.  **Length of Stay**:\
+    The price of an Airbnb listing is significantly related to the length of stay, while the relationship between reviews and length of stay is minimal.
+
+# Proposal for Future Works
+
+To further enhance our understanding of the Airbnb market and its dynamics, the following future research directions are proposed:
+
+1.  **Comparison with Other Short-Term Rental Platforms**:\
+    Conduct an analysis comparing Airbnb data with other popular short-term rental platforms, such as Vrbo and Booking.com. This will provide insights into the competitive dynamics of the market, helping to identify trends, pricing strategies, and consumer preferences across different platforms.
+
+2.  **Analysis of Listing Amenities**:\
+    Collect data on the specific amenities offered by Airbnb listings, such as Wi-Fi, kitchen facilities, parking, and pet-friendly features. This will help identify which amenities have the greatest impact on guests' decisions when choosing a place to stay, providing valuable insights for hosts to optimize their listings.
+
+3.  **Exploring the Age of Active Users**:\
+    Gather data on the age of active Airbnb users and explore whether there is a correlation between the age range of guests and the type of listings they prefer. This analysis will help to understand demographic preferences and could offer personalized insights for both hosts and platform strategies.
+
+By pursuing these research avenues, we aim to build a deeper understanding of the factors influencing Airbnb's success and offer actionable insights to stakeholders within the short-term rental industry.

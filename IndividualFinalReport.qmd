@@ -2,7 +2,9 @@
 title: "Individual Final Report - Analyzing Airbnb Market Trends for NYC 
 in 2019 and 2023"
 author: "Pauline Robert"
-editor: visual
+format:
+  html:
+    code-fold: true
 ---
 <center>
 ![ ](Airbnb-logo.png){width=70% height=70%}
@@ -10,7 +12,7 @@ editor: visual
 
   As members of the **Listing Legends** team, our project explored the impact of property characteristics such as type, location, and availability, and host reputation, including reviews and the number of listings, on Airbnb pricing in NYC. Our analysis draws on data from 2019 and 2023 that we retrived from Kaggle.
  
-  My specific question for this project was to focus on the influence of the Airbnb listing locations on the price per night. When landlords and tenants list their home or a room of their apartment on Airbnb, the general motivation to determine the price per night is to cover a part of the amount of rent they pay per month or the mortgage they need to reimburse. That is why I chose to compare the average price per night per neighborhood group on Airbnb to the average median asking rent per borough in New York City. [StreetEasy](https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://streeteasy.com/blog/data-dashboard/&ved=2ahUKEwjwjqCO0J6KAxXkl4kEHWuoHFAQFnoECBUQAQ&usg=AOvVaw1zdIm6ptJWPKsGgQN1weVB) provides data about the housing market of NYC from 2010 to 2024.
+  My specific question for this project was **"How do rental prices vary by neighborhood in New York City?"**. So I focused on the influence of the Airbnb listing locations on the price per night. When landlords and tenants list their home or a room of their apartment on Airbnb, the general motivation to determine the price per night is to cover a part of the amount of rent they pay per month or the mortgage they need to reimburse. That is why I chose to compare the average price per night per neighborhood group on Airbnb to the average median asking rent per borough in New York City. [StreetEasy](https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://streeteasy.com/blog/data-dashboard/&ved=2ahUKEwjwjqCO0J6KAxXkl4kEHWuoHFAQFnoECBUQAQ&usg=AOvVaw1zdIm6ptJWPKsGgQN1weVB) provides data about the housing market of NYC from 2010 to 2024.
  
 ## StreetEasy Data Manipulation
 
@@ -27,7 +29,7 @@ library(lubridate)
 library(plotly)
 ```
 
-  The next step is to download the [Median Asking Rent per Borough](https://cdn-charts.streeteasy.com/rentals/All/medianAskingRent_All.zip?_ga=2.55931043.945781993.1730314388-725217219.1730314388) from StreetEasy with the following code:
+  The next step is to download the [Median Asking Rent per Borough in NYC](https://cdn-charts.streeteasy.com/rentals/All/medianAskingRent_All.zip?_ga=2.55931043.945781993.1730314388-725217219.1730314388) data set from StreetEasy with the following code by extracting the file from the url link and unzipping it in order to be able to read it:
 ```{r, echo = TRUE, results = "hide", message = FALSE, warning = FALSE}
 # Function to safely download and extract the dataset
 safe_download_extract <- function(url, zip_file, extract_dir) {
@@ -70,10 +72,11 @@ data_file_path <- file.path(extract_dir, "medianAskingRent_All.csv")
 ```
 
 ### 2. Visualization
-After our data has been downloaded and unzip in our files, we can start visualizing our data. I chose to code bar charts to visualize the data that we are going to analyze because it is easy to interpret and clearly show differences in values between groups, helping to analyze trends over time. To code my bar charts visuals, I chose to use the function <span style="background-color: #f3f0ff; color: purple; font-family: monospace;">plot_ly()</span> from the <span style="background-color: #f3f0ff; color: purple; font-family: monospace;">Plotly()</span> library. The visualizations created with Plotly are highly interactive, meaning users can hover over elements to get more information, zoom in or out on the plot, and explore the data in a more dynamic way compared to static charts.
+After our data has been downloaded and unzip in our files, we can start visualizing our data. I chose to display bar charts to visualize the data that we are going to analyze because it is easy to interpret and clearly show differences in values between groups, helping to analyze trends over time. To code my bar charts visuals, I chose to use the function <span style="background-color: #f3f0ff; color: purple; font-family: monospace;">plot_ly()</span> from the <span style="background-color: #f3f0ff; color: purple; font-family: monospace;">Plotly</span> library. The visualizations created with Plotly are highly interactive, meaning users can hover over elements to get more information, zoom in or out on the plot, and explore the data in a more dynamic way compared to static charts.
 
 Our columns in the StreetEasy datasets are named as following "2010-01". So we first have the Year and then the Month number. In order to be able to regroup only the values for 2019 and 2023, I used the <span style="background-color: #f3f0ff; color: purple; font-family: monospace;">pivot_longer()</span> function to "melt" the dataframe, transforming the wide-format data with columns for each month into a long-format structure. This makes it easier to group, filter, and summarize the data by borough. The long format also simplifies plotting and statistical operations, as it aligns each value with its corresponding borough and time period in a single column. 
-Here is the code for 2019 Average Median Asking Price per Borough in NYC visual:
+
+Here is the code for **2019 Average Median Asking Price per Borough in NYC** visual:
 ```{r, echo = TRUE, message = FALSE, warning = FALSE,render: plotly}
 # Step 1: Download and extract
 if (!safe_download_extract(url, zip_file, extract_dir)) {
@@ -129,7 +132,8 @@ fig_ST_2019
 ```
 
 
-Here is the code for 2023 Average Median Asking Price per Borough in NYC visual:
+Here is the code for **2023 Average Median Asking Price per Borough in NYC** visual:
+
 ```{r, echo = TRUE, message = FALSE, warning = FALSE}
 # Step 1: Download and extract
 if (!safe_download_extract(url, zip_file, extract_dir)) {
@@ -186,15 +190,15 @@ fig_ST_2023
 ## Kaggle Airbnb Data Manipulation
 
 ### 1. Data Downloading 
-For the data collected from Kaggle, I dowloaded the data sets directly from the Kaggle website. We use for 2019 the data set from the Kaggle project [New York City Airbnb Open Data](https://www.kaggle.com/datasets/dgomonov/new-york-city-airbnb-open-data), and for 2023, we took the data set [New York City Airbnb 2023, Public Data](https://www.kaggle.com/datasets/godofoutcasts/new-york-city-airbnb-2023-public-data). Both of those Kaggle projects took their data from [Inside Airbnb](https://insideairbnb.com). This website provides a lot of different data about Airbnb but getting that data is not free, that is why we chose to download those data sets from Kaggle.
+For the data collected from Kaggle, I downloaded the data sets directly from the Kaggle website. We use for 2019 the data set from the Kaggle project [New York City Airbnb Open Data](https://www.kaggle.com/datasets/dgomonov/new-york-city-airbnb-open-data), and for 2023, we took the data set [New York City Airbnb 2023, Public Data](https://www.kaggle.com/datasets/godofoutcasts/new-york-city-airbnb-2023-public-data). Both of those Kaggle projects took their data from [Inside Airbnb](https://insideairbnb.com). This website provides a lot of different data about Airbnb but getting that data is not free, that is why we chose to download those data sets from Kaggle.
 
-Once the data sets are downloaded into our files, we can start building our visual.
+Once the data sets are downloaded into our files, we can start building our visuals.
 
 ### 2. Visualization
 
-For my visual, I am going to focus on the columns "price" and "neighborhood_group". After exploring the details of the values inside those columns, I realized that the column "price" has very high values. This might be explained by the fact that there are in NYC some more high-end Airbnb listing and therefor it attracts the average night price up which can make our observations not really accurate as most of those luxury listings are mostly based in Manhattan. To have a more realistic visual, I decided to handle those outliers and replace them by the mean so that we do not drop all those listing numbers.
+For my visualization, I will focus on the "price" and "neighborhood_group" columns. Upon examining the data, I noticed that the "price" column contains some extremely high values. This is likely due to the presence of high-end Airbnb listings in NYC, which skew the average nightly price. These luxury listings are primarily concentrated in Manhattan, and their inclusion may distort our observations. To provide a more accurate representation, I’ve chosen to handle these outliers by replacing them with the mean value, rather than removing these listings entirely. This approach ensures we maintain a realistic dataset while reducing the impact of extreme price points.
 
-Here is the code to handle the outliers and create the visual:
+Here is the code to handle the outliers and create the visuals:
 ```{r, echo = TRUE, message = FALSE, warning = FALSE}
 # Step 1: Load the datasets
 df_2019 <- read_csv('AB_NYC_2019.csv')
